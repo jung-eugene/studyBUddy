@@ -41,10 +41,10 @@ StudyBUddy helps users:
 - **UI/UX Design:** Built with Material 3 theming (light/dark mode, accessibility support)
 
 ### **Stretch Goals**
-- **In-App Chat System:** Direct messaging between matched users  
-- **Streak Tracking System:** Encourage regular study communication  
-- **Group Matching:** Match 3-4 students from the same course  
-- **Google Maps API:** Suggest nearby study locations (e.g., Mugar Library, Questrom Café)  
+- **In-App Chat System:** Direct messaging between matched users
+- **Streak Tracking System:** Encourage regular study communication
+- **Group Matching:** Match 3-4 students from the same course
+- **Google Maps API:** Suggest nearby study locations (e.g., Mugar Library, Questrom Cafe)  
 
 ---
 
@@ -85,7 +85,7 @@ StudyBUddy helps users:
 - **Language:** Kotlin  
 - **Framework:** Jetpack Compose  
 - **Backend:** Firebase Firestore  
-- **APIs:** Firebase Auth, Google Calendar, Google Maps (stretch goal)  
+- **APIs:** Firebase Auth, Google Calendar 
 - **UI:** Material 3 with dark/light mode support  
 
 
