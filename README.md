@@ -1,18 +1,18 @@
-# 📚 StudyBUddy: Find Your Study Match
+# 📚 studyBUddy: Find Your Study Match
 
-StudyBUddy is a mobile app built with Kotlin and Jetpack Compose that helps **Boston University students** find compatible study partners based on their **courses, availability, and study habits**.
+studyBUddy is a mobile app built with Kotlin and Jetpack Compose that helps **Boston University students** find compatible study partners based on their **courses, availability, and study habits**.
 
 Instead of searching through Discord servers or Reddit posts, students can **swipe** through curated profiles of peers who share similar study goals. When two students mutually match, the app securely **reveals their BU email or phone number**, allowing them to connect and coordinate study sessions.
 
 ---
 
 ## 🎯 App Concept and Primary Use Case
-The primary goal of StudyBUddy is to connect students in **large or lecture-heavy courses** (such as computer science, data science, or economics) who want to:
+The primary goal of studyBUddy is to connect students in **large or lecture-heavy courses** (such as computer science, data science, or economics) who want to:
 - Form small study groups
 - Review together before exams
 - Stay accountable through regular check-ins
 
-By combining familiar social mechanics (swiping) with an academic focus, StudyBUddy turns collaboration into a simple, fun, and secure experience.
+By combining familiar social mechanics (swiping) with an academic focus, studyBUddy turns collaboration into a simple, fun, and secure experience.
 
 ---
 
@@ -23,7 +23,7 @@ Current BU undergraduate students who want to study collaboratively.
 **Problem:**  
 Studying alone is hard, and BU’s large campus makes it challenging to find reliable study partners. Students need a quick, safe way to connect with others who share similar study goals, schedules, and classes.
 
-StudyBUddy helps users:
+studyBUddy helps users:
 - Build academic accountability
 - Share resources and motivation
 - Collaborate effectively across courses
