@@ -37,10 +37,12 @@ studyBUddy helps users:
 - **Profile Management:** Create and edit a study profile (major, year, courses, availability)  
 - **Swipe Matching:** Swipe left/right to skip or like potential study partners  
 - **Matched List:** View and contact matched users  
-- **Match Reveal:** Once two users match, BU email or phone number is revealed  
-- **UI/UX Design:** Built with Material 3 theming (light/dark mode, accessibility support)
+- **Match Reveal:** Once two users match, BU email or phone number is revealed
+- **Google Calendar:** Schedule and plan study sessions directly through the app
+- **UI/UX Design:** Built with Material 3 theming and accessibility support
 
 ### **Stretch Goals**
+- **Dark Mode:** Optional dark theme for improved user comfort
 - **In-App Chat System:** Direct messaging between matched users
 - **Streak Tracking System:** Encourage regular study communication
 - **Group Matching:** Match 3-4 students from the same course
