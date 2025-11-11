@@ -29,6 +29,60 @@ studyBUddy helps users:
 - Collaborate effectively across courses
 
 ---
+## ✅ Current Features
+
+studyBUddy is actively developed across multiple branches, each implementing key features. Below is a summary of what's currently available and where to find it:
+
+| **Feature**                              | **Branch**                  | **Status**     |
+|------------------------------------------|-----------------------------|----------------|
+| Google Calendar Event Creation           | `feature/oauth-and-event`   | Functional     |
+| Basic layout of Screens and Navigation   | `Jerry`                     | Functional     |
+
+---
+##  🛠️ Build Instructions
+**Prerequisites:**
+- Your email must be added as a test user in the Google Cloud Platform (GCP) project for studyBUddy to access OAuth and calendar event creation.
+
+**Steps:**
+
+## 🛠️ Run Instructions
+
+**Prerequisites:**
+- Your email must be added as a test user in the Google Cloud Platform (GCP) project for studyBUddy to access OAuth and calendar event creation.
+
+**Steps:**
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/jung-eugene/studyBUddy.git
+   cd studyBUddy
+   ```
+
+2. **Fetch All Branches**
+   ```bash
+   git fetch --all
+   ```
+
+3. **List Available Branches**
+   ```bash
+   git branch -r
+   ```
+
+4. **Checkout a Specific Feature Branch**
+   Replace `<branch-name>` with the one you want to work on:
+   ```bash
+   git checkout <branch-name>
+   ```
+
+5. **Open in Android Studio**
+   - Make sure you have the latest version of Android Studio installed.
+   - Open the project folder and let Gradle sync.
+
+6. **Run the App**
+   - Connect an Android device or use an emulator.
+   - Click **Run** in Android Studio.
+
+---
 
 ## ⚙️ Planned Features
 
@@ -49,7 +103,6 @@ studyBUddy helps users:
 - **Google Maps API:** Suggest nearby study locations (e.g., Mugar Library, Questrom Cafe)  
 
 ---
-
 ## 🌐 External APIs and Onboard Sensors
 
 **External APIs**
