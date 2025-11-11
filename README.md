@@ -39,12 +39,6 @@ studyBUddy is actively developed across multiple branches, each implementing key
 | Basic layout of Screens and Navigation   | `Jerry`                     | Functional     |
 
 ---
-##  🛠️ Build Instructions
-**Prerequisites:**
-- Your email must be added as a test user in the Google Cloud Platform (GCP) project for studyBUddy to access OAuth and calendar event creation.
-
-**Steps:**
-
 ## 🛠️ Run Instructions
 
 **Prerequisites:**
