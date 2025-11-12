@@ -97,6 +97,7 @@ fun LoginScreen(
                             Icon(imageVector = image, contentDescription = description)
                         }
                     }
+
                 )
 
                 Spacer(Modifier.height(16.dp))
