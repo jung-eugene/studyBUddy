@@ -131,7 +131,7 @@ private fun UserCardCompact(user: User) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        // Header (solid red, centered avatar + name; smaller avatar)
+        // Header (solid red, centered avatar; name/major left-aligned)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,7 +139,7 @@ private fun UserCardCompact(user: User) {
                 .padding(top = 18.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // simple circular icon "avatar"
+            // circular icon "avatar"
             Box(
                 modifier = Modifier
                     .size(68.dp)
@@ -156,21 +156,28 @@ private fun UserCardCompact(user: User) {
 
             Spacer(Modifier.height(12.dp))
 
-            Text(
-                text = user.name.ifBlank { "Unnamed Student" },
-                color = Color.White,
-                // keep normal weight, no bold
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
-            )
+            // LEFT-ALIGN this block while keeping avatar centered
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = user.name.ifBlank { "Unnamed Student" },
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
+                )
 
-            // Major • Year (same row)
-            val yearText = user.year.ifBlank { "Year N/A" }
-            val majorText = user.major.ifBlank { "Major N/A" }
-            Text(
-                text = "$majorText • $yearText",
-                color = Color(0xFFFAFAFA),
-                style = MaterialTheme.typography.bodyMedium
-            )
+                // Major • Year (same row)
+                val yearText = user.year.ifBlank { "Year N/A" }
+                val majorText = user.major.ifBlank { "Major N/A" }
+                Text(
+                    text = "$majorText • $yearText",
+                    color = Color(0xFFFAFAFA),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
 
         // Body
@@ -189,7 +196,7 @@ private fun UserCardCompact(user: User) {
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                 )
             }
-            Spacer(Modifier.height(4.dp))
+            // **Removed padding between title and chips**
             if (user.courses.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -222,7 +229,7 @@ private fun UserCardCompact(user: User) {
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                     )
                 }
-                Spacer(Modifier.height(4.dp))
+                // **Removed padding between title and chips**
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -244,8 +251,7 @@ private fun UserCardCompact(user: User) {
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                     )
                 }
-                Spacer(Modifier.height(4.dp))
-                // Split availability string into tokens by comma and chip them
+                // **Removed padding between title and chips**
                 val slots = user.availability.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
