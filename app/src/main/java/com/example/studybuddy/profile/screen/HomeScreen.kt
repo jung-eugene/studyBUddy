@@ -28,6 +28,10 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.filled.CalendarMonth
 
+/**
+ * Home screen displaying swipeable list of potential study partners.
+ * SWIPE MOTION NOT YET IMPLEMENTED
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -70,26 +74,31 @@ fun HomeScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterHorizontally),
+                    horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Skip — red X with subtle red ring, advances to next card
+                    // Skip button, advances to next card
                     Surface(
                         shape = CircleShape,
                         color = Color.White,
                         tonalElevation = 1.dp,
                         shadowElevation = 8.dp,
                         border = BorderStroke(2.dp, red),
-                        modifier = Modifier.size(64.dp)
+                        modifier = Modifier.size(70.dp)
                     ) {
                         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             IconButton(onClick = { users = users.drop(1) }) {
-                                Icon(Icons.Filled.Close, contentDescription = "Skip", tint = red)
+                                Icon(
+                                    Icons.Filled.Close,
+                                    contentDescription = "Skip",
+                                    tint = red,
+                                    modifier = Modifier.size(30.dp)
+                                )
                             }
                         }
                     }
 
-                    // Like — red circle w/ white outline heart
+                    // Like button, advances to next card
                     Surface(
                         shape = CircleShape,
                         color = red,
@@ -104,7 +113,8 @@ fun HomeScreen(
                                 Icon(
                                     Icons.Outlined.Favorite,
                                     contentDescription = "Like",
-                                    tint = Color.White
+                                    tint = Color.White,
+                                    modifier = Modifier.size(30.dp)
                                 )
                             }
                         }
@@ -131,7 +141,7 @@ private fun UserCardCompact(user: User) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        // Header (solid red, centered avatar; name/major left-aligned)
+        // Header
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -139,7 +149,7 @@ private fun UserCardCompact(user: User) {
                 .padding(top = 18.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // circular icon "avatar"
+            // "avatar" icon - replace with profile pic in the future
             Box(
                 modifier = Modifier
                     .size(68.dp)
@@ -156,7 +166,6 @@ private fun UserCardCompact(user: User) {
 
             Spacer(Modifier.height(12.dp))
 
-            // LEFT-ALIGN this block while keeping avatar centered
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -169,7 +178,7 @@ private fun UserCardCompact(user: User) {
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
                 )
 
-                // Major • Year (same row)
+                // Major and year of user
                 val yearText = user.year.ifBlank { "Year N/A" }
                 val majorText = user.major.ifBlank { "Major N/A" }
                 Text(
@@ -196,7 +205,6 @@ private fun UserCardCompact(user: User) {
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                 )
             }
-            // **Removed padding between title and chips**
             if (user.courses.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -214,7 +222,7 @@ private fun UserCardCompact(user: User) {
                 Text("No courses added.", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
             }
 
-            // Study Preferences (grey chips, black text)
+            // Study Preferences
             if (!user.studyPreferences.isNullOrEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -229,7 +237,6 @@ private fun UserCardCompact(user: User) {
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                     )
                 }
-                // **Removed padding between title and chips**
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -240,7 +247,7 @@ private fun UserCardCompact(user: User) {
                 }
             }
 
-            // Availability (individual grey chips)
+            // Availability
             if (user.availability.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -251,7 +258,6 @@ private fun UserCardCompact(user: User) {
                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
                     )
                 }
-                // **Removed padding between title and chips**
                 val slots = user.availability.split(",").map { it.trim() }.filter { it.isNotEmpty() }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
