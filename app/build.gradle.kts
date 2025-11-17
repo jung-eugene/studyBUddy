@@ -45,6 +45,8 @@ android {
 dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.5")
     implementation("androidx.compose.material:material-icons-extended:1.7.8")
+    implementation("androidx.compose.material:material-icons-core")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("com.google.firebase:firebase-auth")
     implementation ("com.google.firebase:firebase-firestore")
     implementation("io.coil-kt:coil-compose:2.7.0")
