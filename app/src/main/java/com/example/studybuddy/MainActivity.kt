@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.example.studybuddy.ui.theme.StudybuddyTheme
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.launch
 
 /**
  * Main entry point of studyBUddy.
@@ -21,26 +20,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            val navController = rememberNavController()
             val userVM: UserViewModel = viewModel()
+            val darkMode by userVM.darkMode.collectAsState()
+
             val auth = FirebaseAuth.getInstance()
-            val scope = rememberCoroutineScope()
+            val uid = auth.currentUser?.uid
 
-            // Reactive theme state
-            var darkMode by remember { mutableStateOf(false) }
-
-            // Fetch dark mode preference when user logs in
-            LaunchedEffect(auth.currentUser) {
-                auth.currentUser?.uid?.let { uid ->
-                    scope.launch {
-                        darkMode = userVM.getDarkMode(uid)
-                    }
-                }
+            LaunchedEffect(uid) {
+                uid?.let { userVM.getDarkMode(it) }  // fetch user setting on launch
             }
 
-            // Apply Material theme
+            val navController = rememberNavController()
+
             StudybuddyTheme(darkTheme = darkMode) {
-                StudyBuddyNavGraph(navController)
+                StudyBuddyNavGraph(navController = navController)
             }
         }
     }

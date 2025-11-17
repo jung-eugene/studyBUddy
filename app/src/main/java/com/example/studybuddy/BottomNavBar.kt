@@ -13,8 +13,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 fun BottomNavBar(navController: NavHostController) {
     val items = listOf(
         Routes.Home,
-//        Routes.Matches,
-//        Routes.Calendar,
+        Routes.Matches,
+        Routes.Calendar,
         Routes.Profile
     )
 
@@ -25,8 +25,8 @@ fun BottomNavBar(navController: NavHostController) {
         items.forEach { screen ->
             val icon = when (screen) {
                 Routes.Home -> Icons.Default.Home
-//                Routes.Matches -> Icons.Default.Favorite
-//                Routes.Calendar -> Icons.Default.CalendarMonth
+                Routes.Matches -> Icons.Default.Group
+                Routes.Calendar -> Icons.Default.CalendarMonth
                 Routes.Profile -> Icons.Default.Person
                 else -> Icons.Default.Person
             }

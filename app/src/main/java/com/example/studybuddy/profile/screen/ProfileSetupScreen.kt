@@ -17,6 +17,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.studybuddy.ProfileSetupState
 import com.example.studybuddy.ProfileSetupViewModel
 import com.example.studybuddy.Routes
 
@@ -28,7 +29,7 @@ fun ProfileSetupScreen(
     navController: NavController,
     setupVM: ProfileSetupViewModel = viewModel()
 ) {
-    var currentStep by rememberSaveable { mutableStateOf(1) }
+    var currentStep by rememberSaveable { mutableIntStateOf(1) }
     val state by setupVM.state.collectAsState()
     val profileSaved by setupVM.profileSaved.collectAsState()
 
@@ -94,11 +95,14 @@ fun ProfileSetupScreen(
 
 @Composable
 fun Step1Content(
-    state: com.example.studybuddy.ProfileSetupState,
+    state: ProfileSetupState,
     setupVM: ProfileSetupViewModel,
     currentStep: Int,
     onNextStep: (Int) -> Unit
 ) {
+    // Validate required fields
+    val isStep1Valid = state.name.isNotBlank() && state.major.isNotBlank() && state.year.isNotBlank()
+
     Column {
         Text("Basic Information", style = MaterialTheme.typography.titleLarge)
         Spacer(Modifier.height(8.dp))
@@ -117,16 +121,17 @@ fun Step1Content(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = state.year,
-            onValueChange = setupVM::updateYear,
-            label = { Text("Year") },
-            modifier = Modifier.fillMaxWidth()
+
+        // Use the reusable YearDropdown from EditProfileScreen for consistency
+        YearDropdown(
+            selectedYear = state.year,
+            onYearSelected = { setupVM.updateYear(it) }
         )
 
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = { onNextStep(currentStep + 1) },
+            onClick = { if (isStep1Valid) onNextStep(currentStep + 1) },
+            enabled = isStep1Valid,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
@@ -137,13 +142,16 @@ fun Step1Content(
 
 @Composable
 fun Step2Content(
-    state: com.example.studybuddy.ProfileSetupState,
+    state: ProfileSetupState,
     setupVM: ProfileSetupViewModel,
     currentStep: Int,
     onNextStep: (Int) -> Unit,
     onComplete: () -> Unit
 ) {
     var course by rememberSaveable { mutableStateOf("") }
+
+    // Validate that at least one course is added before continuing
+    val isStep2Valid = state.courses.isNotEmpty()
 
     Column {
         Text("Your Courses", style = MaterialTheme.typography.titleLarge)
@@ -164,6 +172,7 @@ fun Step2Content(
                 })
             )
             IconButton(onClick = {
+                // Add course on clicking plus button, clear input afterward
                 if (course.isNotBlank()) {
                     setupVM.addCourse(course.trim())
                     course = ""
@@ -179,9 +188,11 @@ fun Step2Content(
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(state.courses.size) { index ->
+                    val courseName = state.courses[index]
+                    // Allow removing a course by clicking its chip
                     AssistChip(
-                        onClick = {},
-                        label = { Text(state.courses[index]) },
+                        onClick = { setupVM.removeCourse(courseName) }, // Remove course on click
+                        label = { Text(courseName) },
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
                             labelColor = MaterialTheme.colorScheme.primary
@@ -194,65 +205,176 @@ fun Step2Content(
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = {
+                // Add current course if any before continuing
                 if (course.isNotBlank()) {
                     setupVM.addCourse(course.trim())
                     course = ""
                 }
-                if (currentStep < 4) onNextStep(currentStep + 1)
-                else onComplete()
+                if (isStep2Valid) {
+                    if (currentStep < 4) onNextStep(currentStep + 1)
+                    else onComplete()
+                }
             },
+            enabled = isStep2Valid, // Disable button if no courses added
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text(
-                text = if (currentStep < 4) "Continue" else "Complete Profile",
-                color = Color.White
-            )
+            Text(text = if (currentStep < 4) "Continue" else "Complete Profile", color = Color.White)
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Step3Content(
-    state: com.example.studybuddy.ProfileSetupState,
+    state: ProfileSetupState,
     setupVM: ProfileSetupViewModel,
     currentStep: Int,
     onNextStep: (Int) -> Unit
 ) {
-    val days = listOf(
-        "Monday Morning", "Monday Afternoon", "Tuesday Evening",
-        "Wednesday Morning", "Thursday Evening", "Friday Afternoon", "Weekend"
-    )
+    val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+    val times = listOf("Morning", "Afternoon", "Evening")
 
-    Column {
+    var selectedDay by remember { mutableStateOf("") }
+    var selectedTime by remember { mutableStateOf("") }
+
+    var dayMenuExpanded by remember { mutableStateOf(false) }
+    var timeMenuExpanded by remember { mutableStateOf(false) }
+
+    val isStepValid = state.availability.isNotEmpty()
+
+    Column(Modifier.fillMaxWidth()) {
+
         Text("Availability", style = MaterialTheme.typography.titleLarge)
-        Text("When are you free to study?", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(8.dp))
+        Text(
+            "Choose your free study times:",
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
 
-        days.forEach { day ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(
-                    checked = state.availability.contains(day),
-                    onCheckedChange = { setupVM.toggleAvailability(day) }
-                )
-                Text(day)
+        // --- DAY DROPDOWN ---
+        ExposedDropdownMenuBox(
+            expanded = dayMenuExpanded,
+            onExpandedChange = { dayMenuExpanded = !dayMenuExpanded }
+        ) {
+            OutlinedTextField(
+                value = selectedDay,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Select Day") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dayMenuExpanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = dayMenuExpanded,
+                onDismissRequest = { dayMenuExpanded = false }
+            ) {
+                days.forEach { day ->
+                    DropdownMenuItem(
+                        text = { Text(day) },
+                        onClick = {
+                            selectedDay = day
+                            dayMenuExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // --- TIME DROPDOWN ---
+        ExposedDropdownMenuBox(
+            expanded = timeMenuExpanded,
+            onExpandedChange = { timeMenuExpanded = !timeMenuExpanded }
+        ) {
+            OutlinedTextField(
+                value = selectedTime,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Select Time") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeMenuExpanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = timeMenuExpanded,
+                onDismissRequest = { timeMenuExpanded = false }
+            ) {
+                times.forEach { time ->
+                    DropdownMenuItem(
+                        text = { Text(time) },
+                        onClick = {
+                            selectedTime = time
+                            timeMenuExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // --- ADD AVAILABILITY BUTTON ---
+        Button(
+            onClick = {
+                if (selectedDay.isNotBlank() && selectedTime.isNotBlank()) {
+                    val label = "$selectedDay $selectedTime"
+                    setupVM.toggleAvailability(label)
+                    selectedDay = ""
+                    selectedTime = ""
+                }
+            },
+            enabled = selectedDay.isNotBlank() && selectedTime.isNotBlank(),
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(MaterialTheme.colorScheme.primary)
+        ) {
+            Text("Add Time", color = Color.White)
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        // --- SHOW SELECTED AVAILABILITY AS CHIPS ---
+        if (state.availability.isNotEmpty()) {
+            Text("Selected Times:", fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(8.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                state.availability.forEach { label ->
+                    AssistChip(
+                        onClick = { setupVM.toggleAvailability(label) },
+                        label = { Text(label) },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                            labelColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
             }
         }
 
         Spacer(Modifier.height(24.dp))
+
         Button(
-            onClick = { onNextStep(currentStep + 1) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            onClick = { if (isStepValid) onNextStep(currentStep + 1) },
+            enabled = isStepValid,
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Continue", color = Color.White)
+            Text("Continue")
         }
     }
 }
 
 @Composable
 fun Step4Content(
-    state: com.example.studybuddy.ProfileSetupState,
+    state: ProfileSetupState,
     setupVM: ProfileSetupViewModel,
     onComplete: () -> Unit
 ) {
@@ -260,6 +382,9 @@ fun Step4Content(
         "Quiet Study", "Group Discussion", "Library",
         "Coffee Shops", "Online / Virtual", "Morning Person", "Night Owl"
     )
+
+    // State to show confirmation dialog before submitting profile
+    var showDialog by remember { mutableStateOf(false) }
 
     Column {
         Text("Study Preferences", style = MaterialTheme.typography.titleLarge)
@@ -277,6 +402,7 @@ fun Step4Content(
         }
 
         Spacer(Modifier.height(12.dp))
+        // Bio field is optional, so no validation needed
         OutlinedTextField(
             value = state.bio,
             onValueChange = setupVM::updateBio,
@@ -287,11 +413,33 @@ fun Step4Content(
 
         Spacer(Modifier.height(24.dp))
         Button(
-            onClick = onComplete,
+            onClick = { showDialog = true },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
         ) {
-            Text("Complete Profile", color = Color.White)
+            Text("Create Profile", color = Color.White)
         }
+    }
+
+    // Confirmation Dialog before final profile submission
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Confirm Profile") },
+            text = { Text("Review your information before submitting.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDialog = false
+                    onComplete()
+                }) {
+                    Text("Yes, continue")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }

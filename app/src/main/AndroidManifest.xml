@@ -12,6 +12,15 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Studybuddy">
         <activity
+            android:name=".CalendarScreen"
+            android:exported="false" />
+        <activity
+            android:name=".MatchesScreen"
+            android:exported="false" />
+        <activity
+            android:name=".EditProfileScreen"
+            android:exported="false" />
+        <activity
             android:name=".profile.screen.ProfileSetupScreen"
             android:exported="false" />
         <activity

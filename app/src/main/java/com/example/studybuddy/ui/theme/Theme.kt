@@ -39,30 +39,58 @@ private val DarkColorScheme = darkColorScheme(
     outline = BUOutline
 )
 
+
+
 // Material 3 Theme Setup with Optional Dynamic Colors
 @Composable
-fun StudybuddyTheme(     //Note the proper capitalization: matches your project name
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+fun StudybuddyTheme(
+    darkTheme: Boolean,   // explicitly controlled from ViewModel, not system
+    dynamicColor: Boolean = false,   // <- force OFF dynamic color
     content: @Composable () -> Unit
 ) {
-    // Optional dynamic color support for Android 12+
+    val context = LocalContext.current
+
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context)
             else dynamicLightColorScheme(context)
         }
-
-        // Fallbacks for older gen android
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
 
-    // Apply color scheme + typography to all Composables
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content
     )
 }
+
+
+
+//@Composable
+//fun StudybuddyTheme(     //Note the proper capitalization: matches your project name
+//    darkTheme: Boolean = isSystemInDarkTheme(),
+//    dynamicColor: Boolean = true,
+//    content: @Composable () -> Unit
+//) {
+//    // Optional dynamic color support for Android 12+
+//    val colorScheme = when {
+//        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
+//            val context = LocalContext.current
+//            if (darkTheme) dynamicDarkColorScheme(context)
+//            else dynamicLightColorScheme(context)
+//        }
+//
+//        // Fallbacks for older gen android
+//        darkTheme -> DarkColorScheme
+//        else -> LightColorScheme
+//    }
+//
+//    // Apply color scheme + typography to all Composables
+//    MaterialTheme(
+//        colorScheme = colorScheme,
+//        typography = Typography,
+//        content = content
+//    )
+//}

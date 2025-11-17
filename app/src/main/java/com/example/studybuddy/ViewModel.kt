@@ -7,6 +7,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.launch
 
 // Manages Firebase user data, like fetching all users info, updating user profile completion
@@ -22,6 +23,7 @@ data class User(
     val photoUrl: String = "",
     val darkMode: Boolean = false,
     val profileSetupComplete: Boolean = false // flag to track if setup done
+
 
 )
 
@@ -70,24 +72,65 @@ class UserViewModel : ViewModel() {
     private val _userProfile = MutableStateFlow<User?>(null)
     val userProfile: StateFlow<User?> = _userProfile
 
-    fun loadUserProfile(uid: String) {
+    private val _darkMode = MutableStateFlow(false)
+    val darkMode: StateFlow<Boolean> = _darkMode
+
+
+    fun loadDarkMode(uid: String) {
         viewModelScope.launch {
             val doc = db.collection("users").document(uid).get().await()
-            val user = doc.toObject(User::class.java)
-            _userProfile.value = user
+            _darkMode.value = doc.getBoolean("darkMode") ?: false
         }
     }
 
-    fun updateDarkMode(uid: String, enabled: Boolean, onResult: (Boolean) -> Unit = {}) {
-        db.collection("users").document(uid)
-            .update("darkMode", enabled)
-            .addOnSuccessListener { onResult(true) }
-            .addOnFailureListener { onResult(false) }
+    fun loadUserProfile(uid: String) {
+        viewModelScope.launch {
+            try {
+                val doc = db.collection("users").document(uid).get().await()
+                val user = doc.toObject(User::class.java)
+                _userProfile.value = user
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
-    suspend fun getDarkMode(uid: String): Boolean {
-        val doc = db.collection("users").document(uid).get().await()
-        return doc.getBoolean("darkMode") ?: false
+    // Save updated profile (used by EditProfileScreen)
+    fun saveUserProfile(uid: String, updatedUser: User) {
+        viewModelScope.launch {
+            try {
+                db.collection("users").document(uid)
+                    .set(updatedUser, SetOptions.merge())
+                    .await()
+                _userProfile.value = updatedUser
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+
+    fun updateDarkMode(uid: String, dark: Boolean) {
+        viewModelScope.launch {
+            try {
+                db.collection("users").document(uid).update("darkMode", dark).await()
+                _darkMode.value = dark  // Update state
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun getDarkMode(uid: String) {
+        viewModelScope.launch {
+            try {
+                val doc = db.collection("users").document(uid).get().await()
+                val dark = doc.getBoolean("darkMode") ?: false
+                _darkMode.value = dark
+            } catch (e: Exception) {
+                _darkMode.value = false
+            }
+        }
     }
     suspend fun getAllUsers(): List<User> {
         val snapshot = db.collection("users").get().await()

@@ -108,6 +108,10 @@ fun LoginScreen(
                             scope.launch {
                                 snackbarHostState.showSnackbar("Please fill in all fields.")
                             }
+                        } else if (password.length < 6) {
+                            scope.launch {
+                                snackbarHostState.showSnackbar("Password must be at least 6 characters.")
+                            }
                         } else if (!email.endsWith("@bu.edu")) {
                             scope.launch {
                                 snackbarHostState.showSnackbar("Please use your BU email address (@bu.edu).")
@@ -131,7 +135,7 @@ fun LoginScreen(
                                                 }
                                             }
                                         } else {
-                                            snackbarHostState.showSnackbar("Login failed.")
+                                            snackbarHostState.showSnackbar("Login failed. Check credentials.")
                                         }
                                     }
                                 }

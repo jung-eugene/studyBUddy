@@ -47,6 +47,13 @@ class ProfileSetupViewModel : ViewModel() {
     }
     fun updateBio(v: String) = _state.update { it.copy(bio = v) }
 
+    fun removeCourse(course: String) {
+        val updatedCourses = state.value.courses.toMutableList()
+        updatedCourses.remove(course)
+        _state.value = state.value.copy(courses = updatedCourses)
+    }
+
+
     // --- Save to Firestore ---
     fun completeProfile() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
