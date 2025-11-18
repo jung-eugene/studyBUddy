@@ -36,7 +36,8 @@ studyBUddy is actively developed across multiple branches, each implementing key
 | **Feature**                              | **Branch**                  | **Status**     |
 |------------------------------------------|-----------------------------|----------------|
 | Google Calendar Event Creation           | `feature/oauth-and-event`   | Functional     |
-| Basic layout of Screens and Navigation   | `Jerry`                     | Functional     |
+| Basic layout of Screens and Navigation   | `feature/onboarding-profile`| Functional     |
+| Home Screen with Swipe Animation         | `feature/home-screen`       | Functional     |
 
 ---
 ## 🛠️ Run Instructions
