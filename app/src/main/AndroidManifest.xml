@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -11,14 +12,54 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.StudyBUddy">
+        android:theme="@style/Theme.Studybuddy">
+        <activity
+            android:name=".CalendarScreen"
+            android:exported="false" />
+        <activity
+            android:name=".MatchesScreen"
+            android:exported="false" />
+        <activity
+            android:name=".EditProfileScreen"
+            android:exported="false" />
+        <activity
+            android:name=".profile.screen.ProfileSetupScreen"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileSetupViewModel"
+            android:exported="false" />
+        <activity
+            android:name=".ThemeManager"
+            android:exported="false" />
+        <activity
+            android:name=".BottomNavBar"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileScreen"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileStep4"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileStep3"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileStep2"
+            android:exported="false" />
+        <activity
+            android:name=".ProfileStep1"
+            android:exported="false" />
+        <activity
+            android:name=".LoginScreen"
+            android:exported="false" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.StudyBUddy">
+            android:theme="@style/Theme.Studybuddy">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

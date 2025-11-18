@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "studyBUddy"
+rootProject.name = "studybuddy"
 include(":app")
- 
