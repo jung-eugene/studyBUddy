@@ -10,7 +10,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
-//Handles temporary user input during the 4-step (now unified) profile setup flow, then saves to Firestore
+// ------------------------------
+// Holds temporary profile-setup user input
+// ------------------------------
 data class ProfileSetupState(
     val name: String = "",
     val major: String = "",
@@ -21,40 +23,47 @@ data class ProfileSetupState(
     val bio: String = ""
 )
 
+// ------------------------------
+// ViewModel handling 4-step onboarding flow
+// ------------------------------
 class ProfileSetupViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(ProfileSetupState())
     val state: StateFlow<ProfileSetupState> = _state
 
-    //track when save completes
+    // Notifies UI when save is complete
     private val _profileSaved = MutableStateFlow(false)
     val profileSaved: StateFlow<Boolean> = _profileSaved
 
-    // --- Update helpers ----
+    // --------------------------
+    // Update helper functions
+    // --------------------------
     fun updateName(v: String) = _state.update { it.copy(name = v) }
     fun updateMajor(v: String) = _state.update { it.copy(major = v) }
     fun updateYear(v: String) = _state.update { it.copy(year = v) }
-    fun addCourse(c: String) = _state.update { it.copy(courses = it.courses + c) }
-    fun toggleAvailability(day: String) = _state.update {
-        val list = it.availability.toMutableList()
-        if (day in list) list.remove(day) else list.add(day)
-        it.copy(availability = list)
-    }
-    fun togglePref(pref: String) = _state.update {
-        val list = it.preferences.toMutableList()
-        if (pref in list) list.remove(pref) else list.add(pref)
-        it.copy(preferences = list)
-    }
     fun updateBio(v: String) = _state.update { it.copy(bio = v) }
 
-    fun removeCourse(course: String) {
-        val updatedCourses = state.value.courses.toMutableList()
-        updatedCourses.remove(course)
-        _state.value = state.value.copy(courses = updatedCourses)
+    fun addCourse(course: String) =
+        _state.update { it.copy(courses = it.courses + course) }
+
+    fun removeCourse(course: String) =
+        _state.update { it.copy(courses = it.courses - course) }
+
+    fun toggleAvailability(slot: String) = _state.update {
+        val updated = it.availability.toMutableList()
+        if (slot in updated) updated.remove(slot) else updated.add(slot)
+        it.copy(availability = updated)
     }
 
+    fun togglePref(pref: String) = _state.update {
+        val updated = it.preferences.toMutableList()
+        if (pref in updated) updated.remove(pref) else updated.add(pref)
+        it.copy(preferences = updated)
+    }
 
-    // --- Save to Firestore ---
+    // --------------------------
+    // Create Firestore User document
+    // --------------------------
     fun completeProfile() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
         val profile = _state.value
@@ -68,6 +77,8 @@ class ProfileSetupViewModel : ViewModel() {
             availability = profile.availability.joinToString(", "),
             studyPreferences = profile.preferences,
             bio = profile.bio,
+            photoUrl = "",        // required so Firestore never stores null
+            darkMode = false,     // required default since your VM loads this
             profileSetupComplete = true
         )
 
@@ -77,10 +88,13 @@ class ProfileSetupViewModel : ViewModel() {
                     .collection("users")
                     .document(uid)
                     .set(user)
-                    .await()           // suspends until Firestore finishes
-                _profileSaved.value = true  // trigger UI navigation
+                    .await()
+
+                _profileSaved.value = true  // triggers navigation in UI
+
             } catch (e: Exception) {
                 e.printStackTrace()
+                // OPTIONAL — Add an error flow if needed
             }
         }
     }

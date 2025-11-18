@@ -10,30 +10,39 @@ import androidx.navigation.compose.rememberNavController
 import com.example.studybuddy.ui.theme.StudybuddyTheme
 import com.google.firebase.auth.FirebaseAuth
 
-/**
- * Main entry point of studyBUddy.
- * Handles global theming by loading dark mode preference from Firestore.
- */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         setContent {
+
+            // Create ViewModels once at the Activity level
             val userVM: UserViewModel = viewModel()
-            val darkMode by userVM.darkMode.collectAsState()
+            val authVM: AuthViewModel = viewModel()
+
+            // Observe UI state from UserViewModel
+            val uiState by userVM.uiState.collectAsState()
+            val darkMode = uiState.darkMode
 
             val auth = FirebaseAuth.getInstance()
             val uid = auth.currentUser?.uid
 
+            // Load user profile when user is logged in
             LaunchedEffect(uid) {
-                uid?.let { userVM.getDarkMode(it) }  // fetch user setting on launch
+                if (uid != null) {
+                    userVM.loadUserProfile(uid)
+                }
             }
 
             val navController = rememberNavController()
 
             StudybuddyTheme(darkTheme = darkMode) {
-                StudyBuddyNavGraph(navController = navController)
+                StudyBuddyNavGraph(
+                    navController = navController,
+                    userVM = userVM,
+                    authVM = authVM
+                )
             }
         }
     }

@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.studybuddy.ProfileSetupState
 import com.example.studybuddy.ProfileSetupViewModel
@@ -27,11 +26,11 @@ import com.example.studybuddy.Routes
 @Composable
 fun ProfileSetupScreen(
     navController: NavController,
-    setupVM: ProfileSetupViewModel = viewModel()
+    viewModel: ProfileSetupViewModel
 ) {
     var currentStep by rememberSaveable { mutableIntStateOf(1) }
-    val state by setupVM.state.collectAsState()
-    val profileSaved by setupVM.profileSaved.collectAsState()
+    val state by viewModel.state.collectAsState()
+    val profileSaved by viewModel.profileSaved.collectAsState()
 
     //Reactively navigate once Firestore save completes
     LaunchedEffect(profileSaved) {
@@ -63,30 +62,30 @@ fun ProfileSetupScreen(
             when (currentStep) {
                 1 -> Step1Content(
                     state = state,
-                    setupVM = setupVM,
+                    setupVM = viewModel,
                     currentStep = currentStep,
                     onNextStep = { currentStep = it }
                 )
 
                 2 -> Step2Content(
                     state = state,
-                    setupVM = setupVM,
+                    setupVM = viewModel,
                     currentStep = currentStep,
                     onNextStep = { currentStep = it },
-                    onComplete = { setupVM.completeProfile() }
+                    onComplete = { viewModel.completeProfile() }
                 )
 
                 3 -> Step3Content(
                     state = state,
-                    setupVM = setupVM,
+                    setupVM = viewModel,
                     currentStep = currentStep,
                     onNextStep = { currentStep = it }
                 )
 
                 4 -> Step4Content(
                     state = state,
-                    setupVM = setupVM,
-                    onComplete = { setupVM.completeProfile() }
+                    setupVM = viewModel,
+                    onComplete = { viewModel.completeProfile() }
                 )
             }
         }

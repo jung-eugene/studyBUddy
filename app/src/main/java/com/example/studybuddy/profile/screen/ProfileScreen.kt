@@ -19,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.studybuddy.AuthViewModel
@@ -32,10 +31,15 @@ import androidx.compose.material.icons.filled.Person
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+//fun ProfileScreen(
+//    navController: NavHostController,
+//    userVM: UserViewModel = viewModel(),
+//    authVM: AuthViewModel = AuthViewModel()
+//)
 fun ProfileScreen(
     navController: NavHostController,
-    userVM: UserViewModel = viewModel(),
-    authVM: AuthViewModel = AuthViewModel()
+    userVM: UserViewModel,
+    authVM: AuthViewModel
 ) {
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
@@ -45,13 +49,18 @@ fun ProfileScreen(
     // Reactive theme values from MaterialTheme
     val color = MaterialTheme.colorScheme
 
-    val darkMode by userVM.darkMode.collectAsState()
-    val userProfile by userVM.userProfile.collectAsState()
+    val uiState by userVM.uiState.collectAsState()
+    val darkMode = uiState.darkMode
+
+
+//    val darkMode by userVM.darkMode.collectAsState()
+//    val userProfile by userVM.userProfile.collectAsState()
 
     // Load theme + profile
     LaunchedEffect(uid) {
         userVM.loadUserProfile(uid)
-        userVM.loadDarkMode(uid)
+//        userVM.loadUserProfile(uid)
+//        userVM.loadDarkMode(uid)
     }
 
     Scaffold(
@@ -83,7 +92,10 @@ fun ProfileScreen(
         containerColor = color.background
     ) { pad ->
 
-        if (userProfile == null) {
+        if (
+            uiState.user == null
+//            userProfile == null
+            ) {
             Box(
                 Modifier.fillMaxSize().padding(pad),
                 contentAlignment = Alignment.Center
@@ -93,7 +105,8 @@ fun ProfileScreen(
             return@Scaffold
         }
 
-        val user = userProfile!!
+        val user = uiState.user!!
+//        val user = userProfile!!
         val scrollState = rememberScrollState()
 
         Column(
@@ -213,7 +226,10 @@ fun ProfileScreen(
                     Switch(
                         checked = darkMode,
                         onCheckedChange = { enabled ->
-                            scope.launch { userVM.updateDarkMode(uid, enabled) }
+                            scope.launch {
+                                userVM.getDarkMode(uid, enabled)
+//                                userVM.updateDarkMode(uid, enabled)
+                            }
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = color.primary,
