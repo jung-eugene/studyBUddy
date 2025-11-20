@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +32,8 @@ fun ProfileSetupScreen(
     var currentStep by rememberSaveable { mutableIntStateOf(1) }
     val state by viewModel.state.collectAsState()
     val profileSaved by viewModel.profileSaved.collectAsState()
+    var showExitDialog by remember { mutableStateOf(false) }
+
 
     //Reactively navigate once Firestore save completes
     LaunchedEffect(profileSaved) {
@@ -45,12 +48,28 @@ fun ProfileSetupScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Step $currentStep of 4", fontWeight = FontWeight.Bold) },
+
+                navigationIcon = {
+                    if (currentStep > 1) {
+                        IconButton(onClick = { currentStep -= 1 }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                    }
+                },
+
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White
                 )
             )
         }
+
+
     ) { pad ->
         Column(
             modifier = Modifier
@@ -90,6 +109,27 @@ fun ProfileSetupScreen(
             }
         }
     }
+    if (showExitDialog) {
+        AlertDialog(
+            onDismissRequest = { showExitDialog = false },
+            title = { Text("Exit Setup?") },
+            text = { Text("Your progress will be saved. Do you want to return to Login?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    showExitDialog = false
+                    navController.navigate(Routes.Login.route) {
+                        popUpTo(Routes.Login.route) { inclusive = true }
+                    }
+                }) { Text("Exit", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExitDialog = false }) {
+                    Text("Stay")
+                }
+            }
+        )
+    }
+
 }
 
 @Composable

@@ -26,7 +26,8 @@ fun BottomNavBar(navController: NavHostController) {
     val hideOnRoutes = listOf(
         Routes.Login.route,
         Routes.ProfileSetup.route,
-        Routes.Edit.route
+        Routes.Edit.route,
+        Routes.Splash.route
     )
     if (currentRoute in hideOnRoutes) return
 
@@ -38,7 +39,7 @@ fun BottomNavBar(navController: NavHostController) {
                 Routes.Matches -> Icons.Default.Group
                 Routes.Calendar -> Icons.Default.CalendarMonth
                 Routes.Profile -> Icons.Default.Person
-                else -> Icons.Default.Person    // required for exhaustive when
+                else -> Icons.Default.Person
             }
 
             val label = when (screen) {
@@ -46,7 +47,7 @@ fun BottomNavBar(navController: NavHostController) {
                 Routes.Matches -> "Matches"
                 Routes.Calendar -> "Calendar"
                 Routes.Profile -> "Profile"
-                else -> ""                     // required for exhaustive when
+                else -> ""
             }
 
             NavigationBarItem(

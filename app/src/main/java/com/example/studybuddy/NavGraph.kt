@@ -17,8 +17,12 @@ fun StudyBuddyNavGraph(
 
     NavHost(
         navController = navController,
-        startDestination = Routes.Login.route
+        startDestination = Routes.Splash.route //Routes.Login.route
     ) {
+        // SPLASH
+        composable(Routes.Splash.route) {
+            SplashScreen(navController = navController)
+        }
 
         // LOGIN
         composable(Routes.Login.route) {
@@ -86,4 +90,6 @@ sealed class Routes(val route: String) {
     object Calendar : Routes("calendar")
     object Profile : Routes("profile")
     object ProfileSetup : Routes("profile_setup")
+    object Splash : Routes("splash")
+
 }
