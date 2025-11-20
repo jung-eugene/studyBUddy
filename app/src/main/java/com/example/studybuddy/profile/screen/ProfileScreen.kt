@@ -25,22 +25,29 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.studybuddy.AuthViewModel
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.UserViewModel
+import com.example.studybuddy.CalendarViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.platform.LocalContext
+import androidx.credentials.CredentialManager
+import androidx.credentials.ClearCredentialStateRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
     userVM: UserViewModel = viewModel(),
-    authVM: AuthViewModel = AuthViewModel()
+    authVM: AuthViewModel = AuthViewModel(),
+    calendarViewModel: CalendarViewModel? = null
 ) {
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
 
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    val credentialManager = remember(context) { CredentialManager.create(context) }
 
     // Reactive theme values from MaterialTheme
     val color = MaterialTheme.colorScheme
@@ -228,6 +235,12 @@ fun ProfileScreen(
             // LOGOUT BUTTON
             Button(
                 onClick = {
+                    calendarViewModel?.clearAccount()
+                    scope.launch {
+                        runCatching {
+                            credentialManager.clearCredentialState(ClearCredentialStateRequest())
+                        }
+                    }
                     authVM.signOut()
                     navController.navigate("login") { popUpTo(0) { inclusive = true } }
                 },

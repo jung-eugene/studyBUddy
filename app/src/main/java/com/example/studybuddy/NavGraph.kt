@@ -1,9 +1,11 @@
 package com.example.studybuddy
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import com.example.studybuddy.CalendarViewModel
 import com.example.studybuddy.profile.screen.CalendarScreen
 import com.example.studybuddy.profile.screen.EditProfileScreen
 import com.example.studybuddy.profile.screen.HomeScreen
@@ -16,13 +18,14 @@ import com.example.studybuddy.profile.screen.ProfileSetupScreen
 // Defines which screens exist and how to get between them
 @Composable
 fun StudyBuddyNavGraph(navController: NavHostController) {
+    val calendarViewModel: CalendarViewModel = viewModel()
     NavHost(navController, startDestination = Routes.Login.route) {
         composable(Routes.Login.route) { LoginScreen(navController) }
         composable(Routes.ProfileSetup.route) { ProfileSetupScreen(navController) }
         composable(Routes.Home.route) { HomeScreen(navController) }
         composable(Routes.Matches.route) { MatchesScreen(navController) }
-        composable(Routes.Calendar.route) { CalendarScreen(navController) }
-        composable(Routes.Profile.route) { ProfileScreen(navController) }
+        composable(Routes.Calendar.route) { CalendarScreen(navController, calendarViewModel) }
+        composable(Routes.Profile.route) { ProfileScreen(navController, calendarViewModel = calendarViewModel) }
         composable(Routes.Edit.route) { EditProfileScreen(navController)}
     }
 }
