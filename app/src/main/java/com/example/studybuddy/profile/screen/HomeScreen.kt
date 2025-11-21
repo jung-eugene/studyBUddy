@@ -24,6 +24,9 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.launch
@@ -151,6 +154,7 @@ private fun SwipeableUserCard(
     onSkip: () -> Unit
 ) {
     val offsetX = remember { Animatable(0f) }
+    val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val swipeThreshold = with(density) { 120.dp.toPx() } // how far to swipe to trigger action
@@ -196,7 +200,10 @@ private fun SwipeableUserCard(
                     }
                 )
             }
-            .offset { androidx.compose.ui.unit.IntOffset(offsetX.value.toInt(), 0) }
+            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+            .graphicsLayer {
+                rotationZ = rotation // adds angled swipe
+            }
     ) {
         UserCardCompact(user)
     }
