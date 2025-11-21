@@ -287,4 +287,4 @@ fun SectionCard(
             content()
         }
     }
-        .}
+}
