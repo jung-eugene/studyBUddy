@@ -20,6 +20,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.IntOffset
+import kotlin.math.roundToInt
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import kotlinx.coroutines.launch
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.User
@@ -30,7 +39,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 
 /**
  * Home screen displaying swipeable list of potential study partners.
- * SWIPE MOTION NOT YET IMPLEMENTED
+ * Swipe right to like, left to skip.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,7 +77,12 @@ fun HomeScreen(
                 Text("No profiles yet — check again later.", color = Color.Gray)
             } else {
                 val user = users.first()
-                UserCardCompact(user)
+
+                CardDeck(
+                    users = users,
+                    onLike = { users = users.drop(1) },
+                    onSkip = { users = users.drop(1) }
+                )
 
                 Row(
                     modifier = Modifier
@@ -121,6 +135,146 @@ fun HomeScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SwipeableUserCard(
+    user: User,
+    onLike: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val offsetX = remember { Animatable(0f) }
+    val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
+    val scope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 120.dp.toPx() } // how far to swipe to trigger action
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        scope.launch {
+                            offsetX.snapTo(offsetX.value + dragAmount.x)
+                        }
+                    },
+                    onDragEnd = {
+                        scope.launch {
+                            when {
+                                offsetX.value > swipeThreshold -> {
+                                    // Swiped right --> like
+                                    offsetX.animateTo(
+                                        targetValue = with(density) { 400.dp.toPx() },
+                                        animationSpec = tween(200)
+                                    )
+                                    onLike()
+                                    offsetX.snapTo(0f)
+                                }
+                                offsetX.value < -swipeThreshold -> {
+                                    // Swiped left --> skip
+                                    offsetX.animateTo(
+                                        targetValue = with(density) { -400.dp.toPx() },
+                                        animationSpec = tween(200)
+                                    )
+                                    onSkip()
+                                    offsetX.snapTo(0f)
+                                }
+                                else -> {
+                                    // Not far enough --> snap back
+                                    offsetX.animateTo(0f, animationSpec = tween(200))
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+            .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+            .graphicsLayer {
+                rotationZ = rotation // adds angled swipe
+            }
+    ) {
+        UserCardCompact(user)
+    }
+}
+
+@Composable
+fun CardDeck(
+    users: List<User>,
+    onLike: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val topUser = users.firstOrNull() ?: return
+
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
+    val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
+
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 120.dp.toPx() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(500.dp)
+    ) {
+        // Slightly visible next card under the top card
+        if (users.size > 1) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(top = 20.dp)
+                    .graphicsLayer {
+                        scaleX = 0.96f
+                        scaleY = 0.96f
+                        alpha = 0.7f
+                    }
+            ) {
+                UserCardCompact(users[1])
+            }
+        }
+
+        // Top swipeable card
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            scope.launch {
+                                offsetX.snapTo(offsetX.value + dragAmount.x)
+                            }
+                        },
+                        onDragEnd = {
+                            scope.launch {
+                                when {
+                                    offsetX.value > swipeThreshold -> {
+                                        offsetX.animateTo(with(density) { 500.dp.toPx() })
+                                        onLike()
+                                        offsetX.snapTo(0f)
+                                    }
+                                    offsetX.value < -swipeThreshold -> {
+                                        offsetX.animateTo(with(density) { -500.dp.toPx() })
+                                        onSkip()
+                                        offsetX.snapTo(0f)
+                                    }
+                                    else -> {
+                                        offsetX.animateTo(0f, animationSpec = tween(200))
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+                .offset { IntOffset(offsetX.value.toInt(), 0) }
+                .graphicsLayer { rotationZ = rotation }
+        ) {
+            UserCardCompact(topUser)
         }
     }
 }
