@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.IntOffset
 import kotlin.math.roundToInt
@@ -79,18 +78,11 @@ fun HomeScreen(
             } else {
                 val user = users.first()
 
-                SwipeableUserCard(
-                    user = user,
-                    onLike = {
-                        // Swipe right --> like
-                        users = users.drop(1)
-                    },
-                    onSkip = {
-                        // Swipe left --> skip
-                        users = users.drop(1)
-                    }
+                CardDeck(
+                    users = users,
+                    onLike = { users = users.drop(1) },
+                    onSkip = { users = users.drop(1) }
                 )
-
 
                 Row(
                     modifier = Modifier
@@ -206,6 +198,84 @@ private fun SwipeableUserCard(
             }
     ) {
         UserCardCompact(user)
+    }
+}
+
+@Composable
+fun CardDeck(
+    users: List<User>,
+    onLike: () -> Unit,
+    onSkip: () -> Unit
+) {
+    val topUser = users.firstOrNull() ?: return
+
+    val offsetX = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
+
+    val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
+
+    val density = LocalDensity.current
+    val swipeThreshold = with(density) { 120.dp.toPx() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(500.dp)
+    ) {
+        // Slightly visible next card under the top card
+        if (users.size > 1) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(top = 20.dp)
+                    .graphicsLayer {
+                        scaleX = 0.96f
+                        scaleY = 0.96f
+                        alpha = 0.7f
+                    }
+            ) {
+                UserCardCompact(users[1])
+            }
+        }
+
+        // Top swipeable card
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            scope.launch {
+                                offsetX.snapTo(offsetX.value + dragAmount.x)
+                            }
+                        },
+                        onDragEnd = {
+                            scope.launch {
+                                when {
+                                    offsetX.value > swipeThreshold -> {
+                                        offsetX.animateTo(with(density) { 500.dp.toPx() })
+                                        onLike()
+                                        offsetX.snapTo(0f)
+                                    }
+                                    offsetX.value < -swipeThreshold -> {
+                                        offsetX.animateTo(with(density) { -500.dp.toPx() })
+                                        onSkip()
+                                        offsetX.snapTo(0f)
+                                    }
+                                    else -> {
+                                        offsetX.animateTo(0f, animationSpec = tween(200))
+                                    }
+                                }
+                            }
+                        }
+                    )
+                }
+                .offset { IntOffset(offsetX.value.toInt(), 0) }
+                .graphicsLayer { rotationZ = rotation }
+        ) {
+            UserCardCompact(topUser)
+        }
     }
 }
 
