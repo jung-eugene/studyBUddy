@@ -45,11 +45,21 @@ import androidx.compose.material.icons.filled.CalendarMonth
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    vm: UserViewModel = UserViewModel()
+    userVM: UserViewModel
 ) {
+    // observe uiState from shared ViewModel
+    val uiState by userVM.uiState.collectAsState()
+
+    // load users on first enter
+    LaunchedEffect(Unit) { userVM.getAllUsers() }
+
+    // the list from Firestore
     var users by remember { mutableStateOf(listOf<User>()) }
 
-    LaunchedEffect(Unit) { users = vm.getAllUsers() }
+    // update when the ViewModel finishes loading users
+    LaunchedEffect(uiState.allUsers) {
+        users = uiState.allUsers
+    }
 
     val red = Color(0xFFD32F2F)
 
@@ -377,7 +387,7 @@ private fun UserCardCompact(user: User) {
             }
 
             // Study Preferences
-            if (!user.studyPreferences.isNullOrEmpty()) {
+            if (user.studyPreferences.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -395,7 +405,7 @@ private fun UserCardCompact(user: User) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    user.studyPreferences!!.forEach { pref ->
+                    user.studyPreferences.forEach { pref ->
                         Chip(text = pref, bg = chipGreyBg, fg = chipGreyText)
                     }
                 }

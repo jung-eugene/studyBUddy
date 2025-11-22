@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,46 +19,35 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.rememberAsyncImagePainter
 import com.example.studybuddy.AuthViewModel
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.UserViewModel
-import com.example.studybuddy.CalendarViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.ui.platform.LocalContext
-import androidx.credentials.CredentialManager
-import androidx.credentials.ClearCredentialStateRequest
+import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    userVM: UserViewModel = viewModel(),
-    authVM: AuthViewModel = AuthViewModel(),
-    calendarViewModel: CalendarViewModel? = null
+    userVM: UserViewModel,
+    authVM: AuthViewModel
 ) {
     val auth = FirebaseAuth.getInstance()
     val uid = auth.currentUser?.uid ?: return
 
     val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val credentialManager = remember(context) { CredentialManager.create(context) }
 
-    // Reactive theme values from MaterialTheme
     val color = MaterialTheme.colorScheme
 
-    val darkMode by userVM.darkMode.collectAsState()
-    val userProfile by userVM.userProfile.collectAsState()
+    val uiState by userVM.uiState.collectAsState()
+    val darkMode = uiState.darkMode
 
-    // Load theme + profile
     LaunchedEffect(uid) {
         userVM.loadUserProfile(uid)
-        userVM.loadDarkMode(uid)
     }
 
     Scaffold(
@@ -72,7 +61,7 @@ fun ProfileScreen(
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = color.primary,   // BURed in light mode, BUPrimaryDark in dark
+                    containerColor = color.primary,
                     titleContentColor = color.onPrimary
                 ),
                 actions = {
@@ -90,17 +79,18 @@ fun ProfileScreen(
         containerColor = color.background
     ) { pad ->
 
-        if (userProfile == null) {
+        if (uiState.user == null) {
             Box(
-                Modifier.fillMaxSize().padding(pad),
+                Modifier
+                    .fillMaxSize()
+                    .padding(pad),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = color.primary)
             }
-            return@Scaffold
         }
 
-        val user = userProfile!!
+        val user = uiState.user!!
         val scrollState = rememberScrollState()
 
         Column(
@@ -150,14 +140,14 @@ fun ProfileScreen(
                 color = color.onBackground
             )
             Text(
-                "${user.major} • Class of ${user.year}",
+                "${user.major} • ${user.year}",
                 color = color.onSurfaceVariant
             )
 
             Spacer(Modifier.height(24.dp))
 
-            // COURSES
-            SectionCard(title = "Courses") {
+            // COURSES with icon
+            SectionCard(title = "Courses", icon = Icons.Default.School) {
                 if (user.courses.isEmpty()) {
                     Text("No courses added.", color = color.onSurfaceVariant)
                 } else {
@@ -176,15 +166,15 @@ fun ProfileScreen(
                 }
             }
 
-            // AVAILABILITY
+            // AVAILABILITY with icon
             if (user.availability.isNotBlank()) {
-                SectionCard(title = "Availability") {
+                SectionCard(title = "Availability", icon = Icons.Default.Timer) {
                     Text(user.availability, color = color.onBackground)
                 }
             }
 
-            // STUDY PREFERENCES
-            SectionCard(title = "Study Preferences") {
+            // STUDY PREFERENCES with icon
+            SectionCard(title = "Study Preferences", icon = Icons.Default.CalendarToday) {
                 if (user.studyPreferences.isEmpty()) {
                     Text("No preferences selected.", color = color.onSurfaceVariant)
                 } else {
@@ -203,15 +193,15 @@ fun ProfileScreen(
                 }
             }
 
-            // BIO
+            // BIO without icon
             if (user.bio.isNotBlank()) {
                 SectionCard(title = "About Me") {
                     Text(user.bio, color = color.onBackground)
                 }
             }
 
-            // SETTINGS
-            SectionCard(title = "Settings") {
+            // SETTINGS with dark mode icon
+            SectionCard(title = "Settings", icon = Icons.Default.DarkMode) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -220,7 +210,9 @@ fun ProfileScreen(
                     Switch(
                         checked = darkMode,
                         onCheckedChange = { enabled ->
-                            scope.launch { userVM.updateDarkMode(uid, enabled) }
+                            scope.launch {
+                                userVM.getDarkMode(uid, enabled)
+                            }
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = color.primary,
@@ -235,12 +227,6 @@ fun ProfileScreen(
             // LOGOUT BUTTON
             Button(
                 onClick = {
-                    calendarViewModel?.clearAccount()
-                    scope.launch {
-                        runCatching {
-                            credentialManager.clearCredentialState(ClearCredentialStateRequest())
-                        }
-                    }
                     authVM.signOut()
                     navController.navigate("login") { popUpTo(0) { inclusive = true } }
                 },
@@ -267,6 +253,7 @@ fun ProfileScreen(
 @Composable
 fun SectionCard(
     title: String,
+    icon: ImageVector? = null,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val color = MaterialTheme.colorScheme
@@ -280,11 +267,22 @@ fun SectionCard(
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
-            Text(
-                title,
-                color = color.primary,
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (icon != null) {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = color.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(
+                    title,
+                    color = color.primary,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            }
             Spacer(Modifier.height(8.dp))
             content()
         }

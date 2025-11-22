@@ -5,37 +5,91 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.example.studybuddy.CalendarViewModel
-import com.example.studybuddy.profile.screen.CalendarScreen
-import com.example.studybuddy.profile.screen.EditProfileScreen
-import com.example.studybuddy.profile.screen.HomeScreen
-import com.example.studybuddy.profile.screen.LoginScreen
-import com.example.studybuddy.profile.screen.MatchesScreen
-import com.example.studybuddy.profile.screen.ProfileScreen
-import com.example.studybuddy.profile.screen.ProfileSetupScreen
-
-
-// Defines which screens exist and how to get between them
+import com.example.studybuddy.profile.screen.*
 @Composable
-fun StudyBuddyNavGraph(navController: NavHostController) {
-    val calendarViewModel: CalendarViewModel = viewModel()
-    NavHost(navController, startDestination = Routes.Login.route) {
-        composable(Routes.Login.route) { LoginScreen(navController) }
-        composable(Routes.ProfileSetup.route) { ProfileSetupScreen(navController) }
-        composable(Routes.Home.route) { HomeScreen(navController) }
-        composable(Routes.Matches.route) { MatchesScreen(navController) }
-        composable(Routes.Calendar.route) { CalendarScreen(navController, calendarViewModel) }
-        composable(Routes.Profile.route) { ProfileScreen(navController, calendarViewModel = calendarViewModel) }
-        composable(Routes.Edit.route) { EditProfileScreen(navController)}
+fun StudyBuddyNavGraph(
+    navController: NavHostController,
+    userVM: UserViewModel,
+    authVM: AuthViewModel,
+    setupVM: ProfileSetupViewModel
+) {
+    NavHost(
+        navController = navController,
+        startDestination = Routes.Splash.route //Routes.Login.route
+    ) {
+        // SPLASH
+        composable(Routes.Splash.route) {
+            SplashScreen(navController = navController)
+        }
+
+        // LOGIN
+        composable(Routes.Login.route) {
+            LoginScreen(
+                navController = navController,
+                authVM = authVM,
+                userVM = userVM
+            )
+        }
+
+        // PROFILE SETUP
+        composable(Routes.ProfileSetup.route) {
+            ProfileSetupScreen(
+                navController = navController,
+                viewModel = setupVM
+            )
+        }
+
+        // HOME
+        composable(Routes.Home.route) {
+            HomeScreen(
+                navController = navController,
+                userVM = userVM
+            )
+        }
+
+        // MATCHES
+        composable(Routes.Matches.route) {
+            MatchesScreen(
+                navController = navController,
+//                userVM = userVM
+            )
+        }
+
+        // CALENDAR
+        composable(Routes.Calendar.route) {
+            CalendarScreen(
+                navController = navController,
+                calendarViewModel = viewModel()
+            )
+        }
+
+        // PROFILE
+        composable(Routes.Profile.route) {
+            ProfileScreen(
+                navController = navController,
+                userVM = userVM,
+                authVM = authVM
+            )
+        }
+
+        // EDIT PROFILE
+        composable(Routes.Edit.route) {
+            EditProfileScreen(
+                navController = navController,
+                userVM = userVM
+            )
+        }
     }
 }
 
+
 sealed class Routes(val route: String) {
-    object Edit: Routes("editProfile")
+    object Edit : Routes("editProfile")
     object Login : Routes("login")
     object Home : Routes("home")
     object Matches : Routes("matches")
     object Calendar : Routes("calendar")
     object Profile : Routes("profile")
     object ProfileSetup : Routes("profile_setup")
+    object Splash : Routes("splash")
 }

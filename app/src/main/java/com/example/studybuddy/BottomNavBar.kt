@@ -8,9 +8,10 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 
-// Displays the icons/buttons that tell the NavController where to go
 @Composable
 fun BottomNavBar(navController: NavHostController) {
+
+    // Only bottom bar items
     val items = listOf(
         Routes.Home,
         Routes.Matches,
@@ -18,11 +19,21 @@ fun BottomNavBar(navController: NavHostController) {
         Routes.Profile
     )
 
-    val current by navController.currentBackStackEntryAsState()
-    val route = current?.destination?.route
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+    // Hide navbar on some screens
+    val hideOnRoutes = listOf(
+        Routes.Login.route,
+        Routes.ProfileSetup.route,
+        Routes.Edit.route,
+        Routes.Splash.route
+    )
+    if (currentRoute in hideOnRoutes) return
 
     NavigationBar {
         items.forEach { screen ->
+
             val icon = when (screen) {
                 Routes.Home -> Icons.Default.Home
                 Routes.Matches -> Icons.Default.Group
@@ -31,22 +42,25 @@ fun BottomNavBar(navController: NavHostController) {
                 else -> Icons.Default.Person
             }
 
+            val label = when (screen) {
+                Routes.Home -> "Home"
+                Routes.Matches -> "Matches"
+                Routes.Calendar -> "Calendar"
+                Routes.Profile -> "Profile"
+                else -> ""
+            }
+
             NavigationBarItem(
-                selected = route == screen.route,
+                selected = currentRoute == screen.route,
                 onClick = {
                     navController.navigate(screen.route) {
-                        popUpTo(navController.graph.startDestinationId) { saveState = true }
+                        popUpTo(Routes.Home.route) { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
                 },
-                icon = { Icon(icon, contentDescription = screen.route) },
-                label = {
-                    Text(
-                        screen.route.replaceFirstChar { it.uppercase() },
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
+                icon = { Icon(icon, contentDescription = label) },
+                label = { Text(label) }
             )
         }
     }

@@ -3,7 +3,12 @@ package com.example.studybuddy.profile.screen
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -11,39 +16,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel = viewModel()) {
-    // Get current user ID from Firebase
+fun EditProfileScreen(
+    navController: NavHostController,
+    userVM: UserViewModel
+) {
     val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
-    val userProfile by userVM.userProfile.collectAsState()
-    val scope = rememberCoroutineScope()
 
-    val BU_RED = Color(0xFFD32F2F)
+    val uiState by userVM.uiState.collectAsState()
+    val user = uiState.user
 
     val snackbarHostState = remember { SnackbarHostState() }
-    var isSaving by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
+    val BU_RED = Color(0xFFD32F2F)
 
-    // Load user profile on entering screen
     LaunchedEffect(uid) {
         userVM.loadUserProfile(uid)
     }
 
-    // Local form states
     var name by remember { mutableStateOf("") }
     var major by remember { mutableStateOf("") }
     var year by remember { mutableStateOf("") }
@@ -52,29 +49,26 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
     var availability by remember { mutableStateOf(listOf<String>()) }
     var studyPreferences by remember { mutableStateOf(listOf<String>()) }
 
-    // Track if profile has already been loaded
     var initialized by remember { mutableStateOf(false) }
     var showCancelDialog by remember { mutableStateOf(false) }
+    var isSaving by remember { mutableStateOf(false) }
 
-    // Fill in the fields once when userProfile loads
-    LaunchedEffect(userProfile) {
-        if (userProfile != null && !initialized) {
-            val u = userProfile!!
-            name = u.name
-            major = u.major
-            year = u.year
-            bio = u.bio
-            courses = u.courses
-            availability = u.availability.split(", ").filter { it.isNotBlank() }
-            studyPreferences = u.studyPreferences
+    LaunchedEffect(user) {
+        if (user != null && !initialized) {
+            name = user.name
+            major = user.major
+            year = user.year
+            bio = user.bio
+            courses = user.courses
+            availability = user.availability.split(", ").filter { it.isNotBlank() }
+            studyPreferences = user.studyPreferences
             initialized = true
         }
     }
 
-    // Detect unsaved changes
     val hasUnsavedChanges by remember(name, major, year, bio, courses, availability, studyPreferences) {
         derivedStateOf {
-            userProfile?.let { old ->
+            user?.let { old ->
                 name != old.name ||
                         major != old.major ||
                         year != old.year ||
@@ -86,36 +80,37 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
         }
     }
 
-    // Handle back button: prompt confirmation if user has unsaved changes
     BackHandler {
         if (hasUnsavedChanges) showCancelDialog = true
-        else navController.navigate("profile")
+        else navController.navigate(Routes.Profile.route)
     }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-
         topBar = {
             TopAppBar(
                 title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = {
                         if (hasUnsavedChanges) showCancelDialog = true
-                        else navController.navigate("profile")
+                        else navController.navigate(Routes.Profile.route)
                     }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Back",
+                            tint = Color.White
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = BU_RED,
-                    titleContentColor = Color.White,
+                    titleContentColor = Color.White
                 )
             )
         }
     ) { pad ->
 
-        // Show loading spinner if profile data is missing
-        if (userProfile == null) {
+        if (uiState.isLoading || user == null) {
             Box(
                 modifier = Modifier
                     .padding(pad)
@@ -124,9 +119,9 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
             ) {
                 CircularProgressIndicator(color = BU_RED)
             }
+            return@Scaffold
         }
 
-        // Main editable form
         Column(
             modifier = Modifier
                 .padding(pad)
@@ -136,7 +131,6 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            // Name field
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
@@ -145,7 +139,6 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
 
-            // Major field
             OutlinedTextField(
                 value = major,
                 onValueChange = { major = it },
@@ -154,10 +147,8 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
 
-            // Year field
             YearDropdown(selectedYear = year, onYearSelected = { year = it })
 
-            // Bio field
             OutlinedTextField(
                 value = bio,
                 onValueChange = { bio = it.take(250) },
@@ -167,40 +158,41 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
                 supportingText = { Text("${bio.length}/250") }
             )
 
-            // Courses field
             Text("Courses", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             CourseEditor(
                 courses = courses,
                 onAddCourse = { courses = courses + it },
-                onRemoveCourse = { courses = courses - it }
+                onRemoveCourse = { courses = courses - it },
+                accentColor = BU_RED
             )
 
-            // Availability field
             Text("Availability", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             AvailabilityEditor(
                 selected = availability,
-                onToggle = { day ->
-                    availability = if (day in availability) availability - day else availability + day
-                }
+                onToggle = { label ->
+                    availability = if (label in availability) availability - label else availability + label
+                },
+                accentColor = BU_RED
             )
 
-            // Study preference field
             Text("Study Preferences", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
             PreferencesEditor(
                 selected = studyPreferences,
                 onToggle = { pref ->
-                    studyPreferences = if (pref in studyPreferences) studyPreferences - pref else studyPreferences + pref
+                    studyPreferences =
+                        if (pref in studyPreferences) studyPreferences - pref else studyPreferences + pref
                 }
             )
 
-            // Action buttons (Cancel and Save)
-            Row( modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
 
-                // Cancel button with confirmation logic
                 OutlinedButton(
                     onClick = {
                         if (hasUnsavedChanges) showCancelDialog = true
-                        else navController.navigate("profile")
+                        else navController.navigate(Routes.Profile.route)
                     },
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = BU_RED)
@@ -208,40 +200,29 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
                     Text("Cancel")
                 }
 
-                // Save button updates Firebase profile
                 Button(
                     onClick = {
-                        if (userProfile == null) {
-                            scope.launch { snackbarHostState.showSnackbar("Still loading profile…") }
-                            return@Button
-                        }
+                        val original = user
 
-                        // Create an updated version of the profile
-                        val updated = userProfile!!.copy(
-                            name = name.ifBlank { userProfile!!.name },
-                            major = major.ifBlank { userProfile!!.major },
-                            year = year.ifBlank { userProfile!!.year },
-                            bio = bio.ifBlank { userProfile!!.bio },
-                            courses = courses.ifEmpty { userProfile!!.courses },
-                            availability =
-                                if (availability.isNotEmpty())
-                                    availability.joinToString(", ")
-                                else
-                                    userProfile!!.availability,
-                            studyPreferences =
-                                studyPreferences.ifEmpty { userProfile!!.studyPreferences },
+                        val updated = original.copy(
+                            name = name,
+                            major = major,
+                            year = year,
+                            bio = bio,
+                            courses = courses,
+                            availability = availability.joinToString(", "),
+                            studyPreferences = studyPreferences,
                             profileSetupComplete = true
                         )
 
-                        // Save changes asynchronously and navigate back to profile screen
                         scope.launch {
+                            isSaving = true
                             try {
-                                isSaving = true
                                 userVM.saveUserProfile(uid, updated)
                                 snackbarHostState.showSnackbar("Profile updated!")
 
-                                navController.navigate("profile") {
-                                    popUpTo("profile") { inclusive = false }
+                                navController.navigate(Routes.Profile.route) {
+                                    popUpTo(Routes.Profile.route) { inclusive = false }
                                 }
                             } catch (e: Exception) {
                                 snackbarHostState.showSnackbar("Error: ${e.message}")
@@ -261,7 +242,6 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
             }
         }
 
-        // Confirmation dialog for discarding changes
         if (showCancelDialog) {
             AlertDialog(
                 onDismissRequest = { showCancelDialog = false },
@@ -270,8 +250,8 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
                 confirmButton = {
                     TextButton(onClick = {
                         showCancelDialog = false
-                        navController.navigate("profile") {
-                            popUpTo("profile") { inclusive = false }
+                        navController.navigate(Routes.Profile.route) {
+                            popUpTo(Routes.Profile.route) { inclusive = false }
                         }
                     }) { Text("Discard", color = BU_RED) }
                 },
@@ -289,18 +269,17 @@ fun EditProfileScreen( navController: NavHostController, userVM: UserViewModel =
 fun CourseEditor(
     courses: List<String>,
     onAddCourse: (String) -> Unit,
-    onRemoveCourse: (String) -> Unit
+    onRemoveCourse: (String) -> Unit,
+    accentColor: Color
 ) {
     var newCourse by remember { mutableStateOf("") }
-    val BU_RED = Color(0xFFD32F2F)
-
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = newCourse,
             onValueChange = { newCourse = it },
-            label = { Text("e.g., CS501") },
-            modifier = Modifier.weight(1f),
+            label = { Text("e.g., CS 501") },
+            modifier = Modifier.weight(1f)
         )
         Button(
             onClick = {
@@ -309,25 +288,22 @@ fun CourseEditor(
                     newCourse = ""
                 }
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = BU_RED,
-                contentColor = Color.White
-            )
+            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
         ) {
-            Text("Add")
+            Text("Add", color = Color.White)
         }
-
     }
 
     Spacer(Modifier.height(8.dp))
+
     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         items(courses) { course ->
             AssistChip(
                 onClick = { onRemoveCourse(course) },
                 label = { Text(course) },
                 colors = AssistChipDefaults.assistChipColors(
-                    containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                    labelColor = MaterialTheme.colorScheme.primary
+                    containerColor = accentColor.copy(alpha = 0.15f),
+                    labelColor = accentColor
                 )
             )
         }
@@ -338,7 +314,8 @@ fun CourseEditor(
 @Composable
 fun AvailabilityEditor(
     selected: List<String>,
-    onToggle: (String) -> Unit
+    onToggle: (String) -> Unit,
+    accentColor: Color
 ) {
     val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
     val times = listOf("Morning", "Afternoon", "Evening")
@@ -350,8 +327,6 @@ fun AvailabilityEditor(
     var timeMenuExpanded by remember { mutableStateOf(false) }
 
     Column {
-
-        // --- DAY DROPDOWN ---
         ExposedDropdownMenuBox(
             expanded = dayMenuExpanded,
             onExpandedChange = { dayMenuExpanded = !dayMenuExpanded }
@@ -363,10 +338,9 @@ fun AvailabilityEditor(
                 label = { Text("Select Day") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dayMenuExpanded) },
                 modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
+                    .menuAnchor()
                     .fillMaxWidth()
             )
-
             ExposedDropdownMenu(
                 expanded = dayMenuExpanded,
                 onDismissRequest = { dayMenuExpanded = false }
@@ -385,22 +359,20 @@ fun AvailabilityEditor(
 
         Spacer(Modifier.height(12.dp))
 
-        // --- TIME DROPDOWN ---
         ExposedDropdownMenuBox(
             expanded = timeMenuExpanded,
             onExpandedChange = { timeMenuExpanded = !timeMenuExpanded }
         ) {
             OutlinedTextField(
-                value = selectedDay,
+                value = selectedTime,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Select Day") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dayMenuExpanded) },
+                label = { Text("Select Time") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeMenuExpanded) },
                 modifier = Modifier
-                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)  // Correct anchor type for read-only fields
+                    .menuAnchor()
                     .fillMaxWidth()
             )
-
             ExposedDropdownMenu(
                 expanded = timeMenuExpanded,
                 onDismissRequest = { timeMenuExpanded = false }
@@ -419,42 +391,37 @@ fun AvailabilityEditor(
 
         Spacer(Modifier.height(16.dp))
 
-        // --- ADD AVAILABILITY ---
         Button(
             onClick = {
-                if (selectedDay.isNotBlank() && selectedTime.isNotBlank()) {
-                    val label = "$selectedDay $selectedTime"
-                    onToggle(label)
-                    selectedDay = ""
-                    selectedTime = ""
-                }
+                val label = "$selectedDay $selectedTime"
+                onToggle(label)
+                selectedDay = ""
+                selectedTime = ""
             },
             enabled = selectedDay.isNotBlank() && selectedTime.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            colors = ButtonDefaults.buttonColors(containerColor = accentColor)
         ) {
             Text("Add Time", color = Color.White)
         }
 
         Spacer(Modifier.height(16.dp))
 
-        // --- SELECTED AVAILABILITY CHIPS ---
         if (selected.isNotEmpty()) {
             Text("Selected Times:", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
 
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.fillMaxWidth()
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 selected.forEach { label ->
                     AssistChip(
-                        onClick = { onToggle(label) }, // remove when tapped
+                        onClick = { onToggle(label) },
                         label = { Text(label) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                            labelColor = MaterialTheme.colorScheme.primary
+                            containerColor = accentColor.copy(alpha = 0.15f),
+                            labelColor = accentColor
                         )
                     )
                 }
@@ -469,8 +436,13 @@ fun PreferencesEditor(
     onToggle: (String) -> Unit
 ) {
     val allPrefs = listOf(
-        "Quiet Study", "Group Discussion", "Library",
-        "Coffee Shops", "Online / Virtual", "Morning Person", "Night Owl"
+        "Quiet Study",
+        "Group Discussion",
+        "Library",
+        "Coffee Shops",
+        "Online / Virtual",
+        "Morning Person",
+        "Night Owl"
     )
 
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -492,17 +464,8 @@ fun YearDropdown(
     selectedYear: String,
     onYearSelected: (String) -> Unit
 ) {
-    //internal state for open/closed menu
     var expanded by remember { mutableStateOf(false) }
-
-    val yearOptions = listOf(
-        "Freshman",
-        "Sophomore",
-        "Junior",
-        "Senior",
-        "Graduate",
-        "Other"
-    )
+    val options = listOf("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other")
 
     ExposedDropdownMenuBox(
         expanded = expanded,
@@ -513,25 +476,20 @@ fun YearDropdown(
             value = selectedYear,
             onValueChange = {},
             label = { Text("Year") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
             modifier = Modifier
-                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
-                .fillMaxWidth(),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-            )
+                .menuAnchor()
+                .fillMaxWidth()
         )
-
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            yearOptions.forEach { option ->
+            options.forEach { year ->
                 DropdownMenuItem(
-                    text = { Text(option) },
+                    text = { Text(year) },
                     onClick = {
-                        onYearSelected(option)
+                        onYearSelected(year)
                         expanded = false
                     }
                 )
