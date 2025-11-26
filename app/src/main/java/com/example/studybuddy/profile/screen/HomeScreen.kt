@@ -36,6 +36,7 @@ import com.example.studybuddy.UserViewModel
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.outlined.FavoriteBorder
 
 /**
  * Home screen displaying swipeable list of potential study partners.
@@ -83,8 +84,45 @@ fun HomeScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             if (users.isEmpty()) {
-                Spacer(Modifier.height(24.dp))
-                Text("No profiles yet — check again later.", color = Color.Gray)
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = 80.dp), // lifts above bottom nav
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Grey circle with heart icon
+                    Surface(
+                        shape = CircleShape,
+                        color = Color(0xFFF0F0F3),
+                        modifier = Modifier.size(96.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                imageVector = Icons.Outlined.FavoriteBorder,
+                                contentDescription = null,
+                                tint = Color(0xFF777777),
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(20.dp))
+
+                    Text(
+                        "No More Profiles",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color(0xFF333333)
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Text(
+                        "Check back later for new study buddies!",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color(0xFF777777)
+                    )
+                }
             } else {
                 val user = users.first()
 
