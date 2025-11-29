@@ -134,7 +134,7 @@ private val durationOptions = listOf(
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
-    calendarViewModel: CalendarViewModel = viewModel()
+    calendarViewModel: CalendarViewModel
 ) {
     /*
     * Compose-level scoped references used throughout the screen for context + coroutine helpers.

@@ -11,7 +11,8 @@ fun StudyBuddyNavGraph(
     navController: NavHostController,
     userVM: UserViewModel,
     authVM: AuthViewModel,
-    setupVM: ProfileSetupViewModel
+    setupVM: ProfileSetupViewModel,
+    calendarVM: CalendarViewModel
 ) {
     NavHost(
         navController = navController,
@@ -59,7 +60,7 @@ fun StudyBuddyNavGraph(
         composable(Routes.Calendar.route) {
             CalendarScreen(
                 navController = navController,
-                calendarViewModel = viewModel()
+                calendarViewModel = calendarVM
             )
         }
 

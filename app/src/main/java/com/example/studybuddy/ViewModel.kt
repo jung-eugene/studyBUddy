@@ -69,35 +69,59 @@ data class UserUiState(
  * Handles login, signup, and password reset using Firebase Authentication.
  */
 class AuthViewModel : ViewModel() {
+    private val TAG = "AuthVM"
     private val auth = FirebaseAuth.getInstance()
 
     // --- LOGIN ---
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
+        Log.d(TAG, "Attempt login with $email")
         auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { onResult(it.isSuccessful) }
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Log.i(TAG, "Login successful for $email")
+                } else {
+                    Log.e(TAG, "Login FAILED for $email", it.exception)
+                }
+                onResult(it.isSuccessful)
+            }
     }
 
     // --- SIGN UP ---
     fun signup(email: String, password: String, onResult: (Boolean) -> Unit) {
+        Log.d(TAG, "Attempt signup with $email")
         auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { onResult(it.isSuccessful) }
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    Log.i(TAG, "Signup successful for $email")
+                } else {
+                    Log.e(TAG, "Signup FAILED for $email", it.exception)
+                }
+                onResult(it.isSuccessful)
+            }
     }
 
     // --- PASSWORD RESET ---
     fun resetPassword(email: String, onResult: (Boolean, String) -> Unit) {
+        Log.d(TAG, "Requesting password reset for $email")
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful)
-                    onResult(true, "Password reset email sent to $email.")
-                else
+                if (task.isSuccessful) {
+                    Log.i(TAG, "Password reset email sent to $email")
+                    onResult(true, "Password reset email sent.")
+                } else {
+                    Log.e(TAG, "Password reset failed for $email", task.exception)
                     onResult(false, task.exception?.message ?: "Error sending reset email.")
+                }
             }
     }
 
 
     // --- SESSION HELPERS ---
     fun currentUser() = auth.currentUser
-    fun signOut() = auth.signOut()
+    fun signOut() {
+        Log.i(TAG, "User logged out")
+        auth.signOut()
+    }
 }
 
 /**
@@ -105,35 +129,38 @@ class AuthViewModel : ViewModel() {
  */
 
 class UserViewModel : ViewModel() {
+    private val TAG = "UserVM"
     private val db = FirebaseFirestore.getInstance()
     private val _uiState = MutableStateFlow(UserUiState())
     val uiState: StateFlow<UserUiState> = _uiState
 
     private fun setLoading(loading: Boolean) {
+        Log.d(TAG, "setLoading($loading)")
         _uiState.value = _uiState.value.copy(isLoading = loading)
     }
-
     private fun setError(message: String?) {
+        Log.w(TAG, "setError: $message")
         _uiState.value = _uiState.value.copy(error = message)
     }
 
     // LOAD CURRENT USER PROFILE
     fun loadUserProfile(uid: String) {
+        Log.d(TAG, "Loading profile for uid=$uid")
         viewModelScope.launch {
             setLoading(true)
             setError(null)
-
             try {
                 val doc = db.collection("users").document(uid).get().await()
                 val user = doc.toObject(User::class.java)
+                Log.i(TAG, "Profile loaded for $uid: ${user?.name}")
 
                 _uiState.value = _uiState.value.copy(
                     user = user,
                     darkMode = user?.darkMode ?: false,
                     isLoading = false
                 )
-
             } catch (e: Exception) {
+                Log.e(TAG, "Error loading profile for $uid", e)
                 setLoading(false)
                 setError(e.message)
             }
@@ -142,21 +169,23 @@ class UserViewModel : ViewModel() {
 
     // SAVE / UPDATE PROFILE
     fun saveUserProfile(uid: String, updatedUser: User) {
+        Log.d(TAG, "Saving profile for $uid")
         viewModelScope.launch {
             setLoading(true)
             setError(null)
-
             try {
                 db.collection("users").document(uid)
                     .set(updatedUser, SetOptions.merge())
                     .await()
 
+                Log.i(TAG, "Profile saved for $uid")
+
                 _uiState.value = _uiState.value.copy(
                     user = updatedUser,
                     isLoading = false
                 )
-
             } catch (e: Exception) {
+                Log.e(TAG, "Error saving profile for $uid", e)
                 setLoading(false)
                 setError(e.message)
             }
@@ -165,15 +194,18 @@ class UserViewModel : ViewModel() {
 
     // DARK MODE TOGGLE
     fun getDarkMode(uid: String, enabled: Boolean) {
+        Log.d(TAG, "Updating darkMode($enabled) for $uid")
         viewModelScope.launch {
             try {
                 db.collection("users").document(uid)
                     .update("darkMode", enabled)
                     .await()
 
-                _uiState.value = _uiState.value.copy(darkMode = enabled)
+                Log.i(TAG, "Dark mode updated for $uid = $enabled")
 
+                _uiState.value = _uiState.value.copy(darkMode = enabled)
             } catch (e: Exception) {
+                Log.e(TAG, "Error updating darkMode for $uid", e)
                 setError(e.message)
             }
         }
@@ -181,19 +213,32 @@ class UserViewModel : ViewModel() {
 
     // LOAD ALL USERS (Used for Home / Matches)
     fun getAllUsers() {
+        Log.d(TAG, "Loading all users...")
+
+        val currentUid = FirebaseAuth.getInstance().currentUser?.uid
+
         viewModelScope.launch {
             setLoading(true)
-
             try {
                 val snapshot = db.collection("users").get().await()
                 val users = snapshot.toObjects(User::class.java)
 
+                // FILTER OUT CURRENT USER
+                val filtered = if (currentUid != null) {
+                    users.filter { it.id != currentUid }
+                } else {
+                    users
+                }
+
+                Log.i(TAG, "Loaded ${filtered.size}/${users.size} users after filtering self")
+
                 _uiState.value = _uiState.value.copy(
-                    allUsers = users,
+                    allUsers = filtered,
                     isLoading = false
                 )
 
             } catch (e: Exception) {
+                Log.e(TAG, "Error loading all users", e)
                 setLoading(false)
                 setError(e.message)
             }
@@ -202,8 +247,11 @@ class UserViewModel : ViewModel() {
 
 
     suspend fun isProfileSetupComplete(uid: String): Boolean {
+        Log.d(TAG, "Checking profileSetupComplete for $uid")
         val doc = db.collection("users").document(uid).get().await()
-        return doc.getBoolean("profileSetupComplete") ?: false
+        val result = doc.getBoolean("profileSetupComplete") ?: false
+        Log.i(TAG, "profileSetupComplete = $result for $uid")
+        return result
     }
 
 }
