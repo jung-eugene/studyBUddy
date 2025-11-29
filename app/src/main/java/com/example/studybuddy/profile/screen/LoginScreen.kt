@@ -47,40 +47,48 @@ fun LoginScreen(
                 .padding(24.dp)
                 .fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
-            elevation = CardDefaults.cardElevation(6.dp)
+            elevation = CardDefaults.cardElevation(8.dp)
         ) {
 
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier
+                    .padding(horizontal = 28.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
-                // App title
+                // --------- Title ---------
+                Icon(
+                    imageVector = Icons.Default.School,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(48.dp)
+                )
+
                 Text(
                     "studyBUddy",
-                    fontSize = 28.sp,
+                    fontSize = 30.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFD32F2F)
                 )
+//                Text(
+//                    "Swipe, match, and study smarter!",
+//                    fontSize = 14.sp,
+//                    color = Color.Gray
+//                )
 
+                Spacer(Modifier.height(32.dp))
+
+                // --------- Welcome header ---------
                 Text(
-                    "Swipe, match, and study smarter!",
-                    fontSize = 14.sp,
-                    color = Color.Gray
-                )
-
-                Spacer(Modifier.height(20.dp))
-
-                Text(
-                    text = if (!isLogin) "Create Account" else "Welcome Back!",
+                    text = if (!isLogin) "Create Account" else "Welcome Back",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = Color.Black
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(18.dp))
 
-                // Email field
+                // --------- Email ---------
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -89,38 +97,56 @@ fun LoginScreen(
                     singleLine = true
                 )
 
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-                // Password field
+                // --------- Password ---------
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Password") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    visualTransformation = if (showPassword)
-                        VisualTransformation.None
-                    else
-                        PasswordVisualTransformation(),
+                    visualTransformation = if (showPassword) VisualTransformation.None
+                    else PasswordVisualTransformation(),
                     trailingIcon = {
-                        val icon = if (showPassword) Icons.Filled.Visibility
-                        else Icons.Filled.VisibilityOff
-
                         IconButton(onClick = { showPassword = !showPassword }) {
                             Icon(
-                                imageVector = icon,
-                                contentDescription = "Toggle password visibility"
+                                imageVector = if (showPassword) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                                contentDescription = null
                             )
                         }
                     }
                 )
 
-                Spacer(Modifier.height(16.dp))
+                // -------- Forgot Password --------
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            if (email.isNotBlank()) {
+                                authVM.resetPassword(email) { _, message ->
+                                    scope.launch { snackbarHostState.showSnackbar(message) }
+                                }
+                            } else {
+                                scope.launch {
+                                    snackbarHostState.showSnackbar("Enter your email to reset password.")
+                                }
+                            }
+                        },
+                        contentPadding = PaddingValues(0.dp)
+                    ) {
+                        Text("Forgot Password?", color = Color(0xFFD32F2F), fontSize = 14.sp)
+                    }
+                }
 
-                // LOGIN / SIGNUP button
+                Spacer(Modifier.height(24.dp))
+
+                // --------- LOGIN / SIGNUP BUTTON ---------
                 Button(
                     onClick = {
-                        // Validation
+                        // VALIDATION LOGIC
                         if (email.isBlank() || password.isBlank()) {
                             scope.launch { snackbarHostState.showSnackbar("Please fill in all fields.") }
                             return@Button
@@ -135,21 +161,14 @@ fun LoginScreen(
                         }
 
                         if (isLogin) {
-                            // -----------------------------------------
-                            // LOGIN FLOW
-                            // -----------------------------------------
                             authVM.login(email, password) { success ->
                                 if (success) {
                                     val uid = FirebaseAuth.getInstance().currentUser?.uid
                                     if (uid != null) {
                                         scope.launch {
-                                            // Check if user completed profile setup
                                             val setupComplete = userVM.isProfileSetupComplete(uid)
-
-                                            // Load user profile into unified uiState
                                             userVM.loadUserProfile(uid)
 
-                                            // Navigate depending on setup
                                             if (setupComplete) {
                                                 navController.navigate(Routes.Home.route) {
                                                     popUpTo(Routes.Login.route) { inclusive = true }
@@ -167,11 +186,7 @@ fun LoginScreen(
                                     }
                                 }
                             }
-
                         } else {
-                            // -----------------------------------------
-                            // SIGN UP
-                            // -----------------------------------------
                             authVM.signup(email, password) { success ->
                                 scope.launch {
                                     if (success) {
@@ -187,37 +202,22 @@ fun LoginScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(50.dp),
+                        .height(48.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
                 ) {
                     Text(
                         if (isLogin) "Log In" else "Sign Up",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
                 }
 
-                Spacer(Modifier.height(8.dp))
-
-                // Forgot password
-                TextButton(onClick = {
-                    if (email.isNotBlank()) {
-                        authVM.resetPassword(email) { _, message ->
-                            scope.launch { snackbarHostState.showSnackbar(message) }
-                        }
-                    } else {
-                        scope.launch {
-                            snackbarHostState.showSnackbar("Enter your email to reset password.")
-                        }
-                    }
-                }) {
-                    Text("Forgot password?", color = Color(0xFFD32F2F))
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                // Toggle login/signup mode
-                TextButton(onClick = { isLogin = !isLogin }) {
+                // --------- SIGN UP PROMPT ---------
+                TextButton(
+                    onClick = { isLogin = !isLogin },
+                    contentPadding = PaddingValues(0.dp)
+                ) {
                     Text(
                         if (isLogin) "Don’t have an account? Sign up"
                         else "Already have an account? Log In",
