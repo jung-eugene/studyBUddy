@@ -14,6 +14,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Studybuddy">
         <activity
+            android:name=".HomeViewModel"
+            android:exported="false" />
+        <activity
+            android:name=".MatchRepository"
+            android:exported="false" />
+        <activity
             android:name=".profile.screen.SplashScreen"
             android:exported="false" />
         <activity

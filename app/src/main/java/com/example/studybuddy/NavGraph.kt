@@ -1,7 +1,6 @@
 package com.example.studybuddy
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,7 +11,8 @@ fun StudyBuddyNavGraph(
     userVM: UserViewModel,
     authVM: AuthViewModel,
     setupVM: ProfileSetupViewModel,
-    calendarVM: CalendarViewModel
+    calendarVM: CalendarViewModel,
+    homeVM: HomeViewModel
 ) {
     NavHost(
         navController = navController,
@@ -44,6 +44,7 @@ fun StudyBuddyNavGraph(
         composable(Routes.Home.route) {
             HomeScreen(
                 navController = navController,
+//                homeVM = homeVM,
                 userVM = userVM
             )
         }
