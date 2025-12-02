@@ -34,6 +34,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
+import androidx.core.content.FileProvider
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,6 +104,27 @@ fun EditProfileScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) newPhotoUri = uri
+    }
+
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showPhotoSourceDialog by remember { mutableStateOf(false) }
+
+    // CAMERA: take a photo and save into our temp file
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraImageUri != null) {
+            newPhotoUri = cameraImageUri        // show the new camera image
+        }
+    }
+
+    fun createImageUri(): Uri {
+        val file = File(context.cacheDir, "camera_temp_image.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
     }
 
     BackHandler {
@@ -174,7 +197,7 @@ fun EditProfileScreen(
                             painter = photoPainter,
                             contentDescription = "Profile Photo",
                             modifier = Modifier
-                                .size(130.dp)
+                                .size(120.dp)
                                 .clip(CircleShape)
                                 .background(color.secondary),
                             contentScale = ContentScale.Crop
@@ -182,7 +205,7 @@ fun EditProfileScreen(
                     } else {
                         Box(
                             modifier = Modifier
-                                .size(130.dp)
+                                .size(100.dp)
                                 .clip(CircleShape)
                                 .background(Color(0xFFD32F2F)),
                             contentAlignment = Alignment.Center
@@ -191,7 +214,7 @@ fun EditProfileScreen(
                                 Icons.Default.Person,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(48.dp)
+                                modifier = Modifier.size(66.dp)
                             )
                         }
                     }
@@ -199,7 +222,8 @@ fun EditProfileScreen(
                     // Camera icon overlay
                     IconButton(
                         onClick = {
-                            imagePickerLauncher.launch("image/*")
+                            // Show options dialog
+                            showPhotoSourceDialog = true
                         },
                         modifier = Modifier
                             .size(38.dp)
@@ -374,6 +398,27 @@ fun EditProfileScreen(
                     TextButton(onClick = { showCancelDialog = false }) {
                         Text("Keep Editing")
                     }
+                }
+            )
+        }
+
+        if (showPhotoSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showPhotoSourceDialog = false },
+                title = { Text("Change Profile Photo") },
+                text = { Text("Choose a source") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        cameraImageUri = createImageUri()
+                        takePictureLauncher.launch(cameraImageUri!!)
+                        showPhotoSourceDialog = false
+                    }) { Text("Take Photo") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        imagePickerLauncher.launch("image/*")
+                        showPhotoSourceDialog = false
+                    }) { Text("Choose from Gallery") }
                 }
             )
         }
