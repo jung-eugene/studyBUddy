@@ -2,6 +2,7 @@ package com.example.studybuddy
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,7 +37,7 @@ fun BottomNavBar(navController: NavHostController) {
 
             val icon = when (screen) {
                 Routes.Home -> Icons.Default.Home
-                Routes.Matches -> Icons.Default.Group
+                Routes.Matches -> Icons.Outlined.ChatBubbleOutline
                 Routes.Calendar -> Icons.Default.CalendarMonth
                 Routes.Profile -> Icons.Default.Person
                 else -> Icons.Default.Person
@@ -59,9 +60,30 @@ fun BottomNavBar(navController: NavHostController) {
                         restoreState = true
                     }
                 },
-                icon = { Icon(icon, contentDescription = label) },
-                label = { Text(label) }
+                icon = {
+                    Icon(
+                        icon,
+                        contentDescription = label,
+                        tint = if (currentRoute == screen.route)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                label = {
+                    Text(
+                        label,
+                        color = if (currentRoute == screen.route)
+                            MaterialTheme.colorScheme.primary
+                        else
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
+                colors = NavigationBarItemDefaults.colors(
+                    indicatorColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                )
             )
+
         }
     }
 }

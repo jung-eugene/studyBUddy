@@ -67,6 +67,10 @@ import com.example.studybuddy.UserViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.example.studybuddy.ui.StudyBuddyTopBar
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.outlined.FavoriteBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -413,7 +417,11 @@ private fun UserCardCompact(user: User) {
 
             if (user.studyPreferences.isNotEmpty()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.CalendarMonth, contentDescription = null, tint = Color(0xFF6B6B6B))
+                    Icon(
+                        Icons.Filled.CalendarToday,
+                        contentDescription = null,
+                        tint = Color(0xFF6B6B6B)
+                    )
                     Spacer(Modifier.width(8.dp))
                     Text("Study Preferences", style = MaterialTheme.typography.titleMedium)
                 }
