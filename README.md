@@ -36,8 +36,10 @@ studyBUddy is actively developed across multiple branches, each implementing key
 | **Feature**                              | **Branch**                  | **Status**     |
 |------------------------------------------|-----------------------------|----------------|
 | Google Calendar Event Creation           | `feature/oauth-and-event`   | Functional     |
-| Basic layout of Screens and Navigation   | `feature/onboarding-profile`| Functional     |
-| Home Screen with Swipe Animation         | `feature/home-screen`       | Functional     |
+| Core UI layout + Navigation setup        | `feature/onboarding-profile`| Functional     |
+| Home Screen with swipe deck animation    | `feature/home-screen`       | Functional     |
+| Profile picture upload (camera/gallery)  | `feature/camera-sensor`     | Functional     |
+| Core backend (NavGraph/ViewModel)        | `feature/onboarding-v2`     | Functional     |
 
 ---
 ## 🛠️ Run Instructions
@@ -115,9 +117,10 @@ studyBUddy is actively developed across multiple branches, each implementing key
 |--------|-----------|
 | **Login / Signup** | BU email verification |
 | **Profile Setup** | Input major, year, courses, and availability |
-| **Home (Discover)** | Swipe through study partner cards |
+| **Home** | Swipe through study partner cards |
 | **Matches** | View and contact matched users |
 | **Profile** | Edit personal info, toggle light/dark mode, logout |
+| **Calendar** | Schedule and plan study sessions with partners |
 
 ---
 
