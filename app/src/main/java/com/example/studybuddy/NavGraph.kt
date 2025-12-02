@@ -44,8 +44,8 @@ fun StudyBuddyNavGraph(
         composable(Routes.Home.route) {
             HomeScreen(
                 navController = navController,
-//                homeVM = homeVM,
-                userVM = userVM
+                userVM = userVM,
+                homeVM = homeVM
             )
         }
 
@@ -53,7 +53,7 @@ fun StudyBuddyNavGraph(
         composable(Routes.Matches.route) {
             MatchesScreen(
                 navController = navController,
-//                userVM = userVM
+                userVM = userVM
             )
         }
 

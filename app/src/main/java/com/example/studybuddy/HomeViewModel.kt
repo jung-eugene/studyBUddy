@@ -35,6 +35,7 @@ class HomeViewModel(
         Log.d(TAG_HOME, "setCandidates() received ${allUsers.size} users")
 
         // Do async work (fetch likes/matches) and then update state
+        _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
             // Save current user for filtering
             currentUser = allUsers.find { it.id == currentUid }
