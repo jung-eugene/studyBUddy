@@ -8,7 +8,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,13 +21,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.Book
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.School
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -67,10 +61,7 @@ import com.example.studybuddy.UserViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.example.studybuddy.ui.StudyBuddyTopBar
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.material.icons.filled.CalendarToday
-import androidx.compose.material.icons.outlined.FavoriteBorder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -350,9 +341,10 @@ private fun UserCardCompact(user: User) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(68.dp)
+                    .size(80.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.18f)),
+                    .background(Color.White.copy(alpha = 0.18f))
+                    .padding(10.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -396,7 +388,7 @@ private fun UserCardCompact(user: User) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "Current Courses",
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
             if (user.courses.isNotEmpty()) {
@@ -416,6 +408,7 @@ private fun UserCardCompact(user: User) {
             }
 
             if (user.studyPreferences.isNotEmpty()) {
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.CalendarToday,
@@ -423,7 +416,7 @@ private fun UserCardCompact(user: User) {
                         tint = Color(0xFF6B6B6B)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Study Preferences", style = MaterialTheme.typography.titleMedium)
+                    Text("Study Preferences", style = MaterialTheme.typography.bodyMedium)
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     user.studyPreferences.forEach { pref ->
@@ -433,13 +426,17 @@ private fun UserCardCompact(user: User) {
             }
 
             if (user.availability.isNotBlank()) {
+                Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.AccessTime, contentDescription = null, tint = Color(0xFF6B6B6B))
                     Spacer(Modifier.width(8.dp))
-                    Text("Available", style = MaterialTheme.typography.titleMedium)
+                    Text("Availability", style = MaterialTheme.typography.bodyMedium)
                 }
                 val slots = user.availability.split(",")
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     slots.forEach {
                         Chip(text = it.trim(), bg = chipGreyBg, fg = chipGreyText)
                     }
