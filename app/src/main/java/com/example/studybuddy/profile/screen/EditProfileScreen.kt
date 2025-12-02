@@ -1,6 +1,9 @@
 package com.example.studybuddy.profile.screen
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -8,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +26,17 @@ import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.rememberAsyncImagePainter
+import androidx.core.content.FileProvider
+import java.io.File
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -36,6 +51,7 @@ fun EditProfileScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val BU_RED = Color(0xFFD32F2F)
+    val color = MaterialTheme.colorScheme
 
     LaunchedEffect(uid) {
         userVM.loadUserProfile(uid)
@@ -80,6 +96,37 @@ fun EditProfileScreen(
         }
     }
 
+    // FOR PROFILE PHOTO
+    val context = LocalContext.current
+    var newPhotoUri by remember { mutableStateOf<Uri?>(null) }
+
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) newPhotoUri = uri
+    }
+
+    var cameraImageUri by remember { mutableStateOf<Uri?>(null) }
+    var showPhotoSourceDialog by remember { mutableStateOf(false) }
+
+    // CAMERA: take a photo and save into our temp file
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success && cameraImageUri != null) {
+            newPhotoUri = cameraImageUri        // show the new camera image
+        }
+    }
+
+    fun createImageUri(): Uri {
+        val file = File(context.cacheDir, "camera_temp_image.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+    }
+
     BackHandler {
         if (hasUnsavedChanges) showCancelDialog = true
         else navController.navigate(Routes.Profile.route)
@@ -98,13 +145,13 @@ fun EditProfileScreen(
                         Icon(
                             Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
-                            tint = Color.White
+                            tint = Color.Black
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BU_RED,
-                    titleContentColor = Color.White
+                    containerColor = Color.White,
+                    titleContentColor = Color.Black
                 )
             )
         }
@@ -128,61 +175,153 @@ fun EditProfileScreen(
                 .padding(20.dp)
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 20.dp)
+            ) {
 
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Name") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-            )
+                Box(contentAlignment = Alignment.BottomEnd) {
 
-            OutlinedTextField(
-                value = major,
-                onValueChange = { major = it },
-                label = { Text("Major") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-            )
+                    // Profile image
+                    val photoPainter = when {
+                        newPhotoUri != null -> rememberAsyncImagePainter(newPhotoUri)
+                        user.photoUrl.isNotBlank() -> rememberAsyncImagePainter(user.photoUrl)
+                        else -> null
+                    }
 
-            YearDropdown(selectedYear = year, onYearSelected = { year = it })
+                    if (photoPainter != null) {
+                        Image(
+                            painter = photoPainter,
+                            contentDescription = "Profile Photo",
+                            modifier = Modifier
+                                .size(120.dp)
+                                .clip(CircleShape)
+                                .background(color.secondary),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier
+                                .size(100.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFD32F2F)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(66.dp)
+                            )
+                        }
+                    }
 
-            OutlinedTextField(
-                value = bio,
-                onValueChange = { bio = it.take(250) },
-                label = { Text("Bio (max 250 chars)") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3,
-                supportingText = { Text("${bio.length}/250") }
-            )
-
-            Text("Courses", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            CourseEditor(
-                courses = courses,
-                onAddCourse = { courses = courses + it },
-                onRemoveCourse = { courses = courses - it },
-                accentColor = BU_RED
-            )
-
-            Text("Availability", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            AvailabilityEditor(
-                selected = availability,
-                onToggle = { label ->
-                    availability = if (label in availability) availability - label else availability + label
-                },
-                accentColor = BU_RED
-            )
-
-            Text("Study Preferences", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-            PreferencesEditor(
-                selected = studyPreferences,
-                onToggle = { pref ->
-                    studyPreferences =
-                        if (pref in studyPreferences) studyPreferences - pref else studyPreferences + pref
+                    // Camera icon overlay
+                    IconButton(
+                        onClick = {
+                            // Show options dialog
+                            showPhotoSourceDialog = true
+                        },
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(color.primary)
+                            .padding(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CameraAlt,
+                            contentDescription = "Change Photo",
+                            tint = Color.White
+                        )
+                    }
                 }
-            )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                TextButton(onClick = { imagePickerLauncher.launch("image/*") }) {
+                    Text(
+                        "Change Photo",
+                        color = color.primary,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            // ---- NAME AND BIO SECTION ----
+            SectionCard(title = "Basic Info", icon = Icons.Default.Person) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name", style = MaterialTheme.typography.bodyMedium) },
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+
+                    OutlinedTextField(
+                        value = major,
+                        onValueChange = { major = it },
+                        label = { Text("Major", style = MaterialTheme.typography.bodyMedium) },
+                        modifier = Modifier.fillMaxWidth(),
+                        textStyle = MaterialTheme.typography.bodyMedium
+                    )
+
+                    YearDropdown(
+                        selectedYear = year,
+                        onYearSelected = { year = it }
+                    )
+
+                    OutlinedTextField(
+                        value = bio,
+                        onValueChange = { bio = it.take(250) },
+                        label = { Text("Bio (max 250 chars)") },
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.fillMaxWidth(),
+                        maxLines = 4,
+                        supportingText = {
+                            Text("${bio.length}/250", style = MaterialTheme.typography.bodySmall)
+                        }
+                    )
+                }
+            }
+
+            // ---- COURSES ---
+            SectionCard(title = "Courses", icon = Icons.Default.Book) {
+                CourseEditor(
+                    courses = courses,
+                    onAddCourse = { courses = courses + it },
+                    onRemoveCourse = { courses = courses - it },
+                    accentColor = BU_RED
+                )
+            }
+
+            // ---- AVAILABILITY ----
+            SectionCard(title = "Availability", icon = Icons.Default.AccessTime) {
+                AvailabilityEditor(
+                    selected = availability,
+                    onToggle = { label ->
+                        availability = if (label in availability) availability - label else availability + label
+                    },
+                    accentColor = BU_RED
+                )
+            }
+
+            // ---- STUDY PREFERENCES ----
+            SectionCard(title = "Study Preferences", icon = Icons.Default.CalendarToday) {
+                PreferencesEditor(
+                    selected = studyPreferences,
+                    onToggle = { pref ->
+                        studyPreferences =
+                            if (pref in studyPreferences) studyPreferences - pref else studyPreferences + pref
+                    }
+                )
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -262,6 +401,27 @@ fun EditProfileScreen(
                 }
             )
         }
+
+        if (showPhotoSourceDialog) {
+            AlertDialog(
+                onDismissRequest = { showPhotoSourceDialog = false },
+                title = { Text("Change Profile Photo") },
+                text = { Text("Choose a source") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        cameraImageUri = createImageUri()
+                        takePictureLauncher.launch(cameraImageUri!!)
+                        showPhotoSourceDialog = false
+                    }) { Text("Take Photo") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        imagePickerLauncher.launch("image/*")
+                        showPhotoSourceDialog = false
+                    }) { Text("Choose from Gallery") }
+                }
+            )
+        }
     }
 }
 
@@ -273,12 +433,13 @@ fun CourseEditor(
     accentColor: Color
 ) {
     var newCourse by remember { mutableStateOf("") }
+    var color = MaterialTheme.colorScheme
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         OutlinedTextField(
             value = newCourse,
             onValueChange = { newCourse = it },
-            label = { Text("e.g., CS 501") },
+            label = { Text("e.g., CS 501", style = MaterialTheme.typography.bodyMedium) },
             modifier = Modifier.weight(1f)
         )
         Button(
@@ -300,10 +461,11 @@ fun CourseEditor(
         items(courses) { course ->
             AssistChip(
                 onClick = { onRemoveCourse(course) },
+                shape = RoundedCornerShape(50),
                 label = { Text(course) },
                 colors = AssistChipDefaults.assistChipColors(
-                    containerColor = accentColor.copy(alpha = 0.15f),
-                    labelColor = accentColor
+                    containerColor = color.secondary,
+                    labelColor = color.primary
                 )
             )
         }
@@ -326,6 +488,8 @@ fun AvailabilityEditor(
     var dayMenuExpanded by remember { mutableStateOf(false) }
     var timeMenuExpanded by remember { mutableStateOf(false) }
 
+    val color = MaterialTheme.colorScheme
+
     Column {
         ExposedDropdownMenuBox(
             expanded = dayMenuExpanded,
@@ -335,7 +499,7 @@ fun AvailabilityEditor(
                 value = selectedDay,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Select Day") },
+                label = { Text("Select Day", style = MaterialTheme.typography.bodyMedium) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dayMenuExpanded) },
                 modifier = Modifier
                     .menuAnchor()
@@ -367,7 +531,7 @@ fun AvailabilityEditor(
                 value = selectedTime,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Select Time") },
+                label = { Text("Select Time", style = MaterialTheme.typography.bodyMedium) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = timeMenuExpanded) },
                 modifier = Modifier
                     .menuAnchor()
@@ -418,10 +582,11 @@ fun AvailabilityEditor(
                 selected.forEach { label ->
                     AssistChip(
                         onClick = { onToggle(label) },
+                        shape = RoundedCornerShape(50),
                         label = { Text(label) },
                         colors = AssistChipDefaults.assistChipColors(
-                            containerColor = accentColor.copy(alpha = 0.15f),
-                            labelColor = accentColor
+                            containerColor = color.secondary,
+                            labelColor = color.primary
                         )
                     )
                 }
@@ -452,7 +617,7 @@ fun PreferencesEditor(
                     checked = pref in selected,
                     onCheckedChange = { onToggle(pref) }
                 )
-                Text(pref)
+                Text(pref, style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
