@@ -196,16 +196,16 @@ fun EditProfileScreen(
                     } else {
                         Box(
                             modifier = Modifier
-                                .size(100.dp)
+                                .size(90.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFD32F2F)),
+                                .background(color.primary),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                Icons.Default.Person,
+                                Icons.Default.School,
                                 contentDescription = null,
                                 tint = Color.White,
-                                modifier = Modifier.size(66.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
                     }
@@ -230,7 +230,7 @@ fun EditProfileScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 TextButton(onClick = { imagePickerLauncher.launch("image/*") }) {
                     Text(

@@ -113,16 +113,16 @@ fun ProfileScreen(
             } else {
                 Box(
                     modifier = Modifier
-                        .size(80.dp)
+                        .size(90.dp)
                         .clip(CircleShape)
-                        .background(Color(0xFFD32F2F))
-                        .padding(20.dp),
+                        .background(Color(0xFFD32F2F)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Filled.School,
                         contentDescription = null,
                         tint = Color.White,
+                        modifier = Modifier.size(36.dp)
                     )
                 }
             }

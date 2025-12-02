@@ -160,7 +160,11 @@ fun HomeScreen(
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         IconButton(onClick = { homeVM.skipCurrent() }) {
-                            Icon(Icons.Filled.Close, contentDescription = "Skip", tint = red)
+                            Icon(Icons.Filled.Close,
+                                contentDescription = "Skip",
+                                tint = red,
+                                modifier = Modifier.size(28.dp)
+                            )
                         }
                     }
                 }
@@ -184,7 +188,8 @@ fun HomeScreen(
                             Icon(
                                 Icons.Outlined.Favorite,
                                 contentDescription = "Like",
-                                tint = Color.White
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
                             )
                         }
                     }
@@ -341,7 +346,7 @@ private fun UserCardCompact(user: User) {
         ) {
             Box(
                 modifier = Modifier
-                    .size(80.dp)
+                    .size(90.dp)
                     .clip(CircleShape)
                     .background(Color.White.copy(alpha = 0.18f))
                     .padding(10.dp),
@@ -350,7 +355,8 @@ private fun UserCardCompact(user: User) {
                 Icon(
                     imageVector = Icons.Filled.School,
                     contentDescription = null,
-                    tint = Color.White
+                    tint = Color.White,
+                    modifier = Modifier.size(36.dp)
                 )
             }
 
