@@ -24,8 +24,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +37,7 @@ import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,12 +61,7 @@ fun MatchesScreen(
     }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Your Matches") },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
-            )
-        },
+        topBar = { StudyBuddyTopBar(title = "Your Matches") },
         bottomBar = { BottomNavBar(navController) }
     ) { pad ->
 

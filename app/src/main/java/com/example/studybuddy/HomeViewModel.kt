@@ -113,7 +113,7 @@ class HomeViewModel(
                 _uiState.value = state.copy(candidates = updated, currentIndex = newIndex)
 
                 if (isMutual) {
-                    Log.i(TAG_HOME, "🔥 MUTUAL MATCH with ${target.name}!")
+                    Log.i(TAG_HOME, "MUTUAL MATCH with ${target.name}!")
                     onMatch(true, target)  // return matched user to popup
                 } else {
                     onMatch(false, null)

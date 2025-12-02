@@ -8,7 +8,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,6 +21,7 @@ import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import com.example.studybuddy.ui.StudyBuddyTopBar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditProfileScreen(
@@ -88,24 +88,14 @@ fun EditProfileScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (hasUnsavedChanges) showCancelDialog = true
-                        else navController.navigate(Routes.Profile.route)
-                    }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.White
-                        )
-                    }
+            StudyBuddyTopBar(
+                title = "Edit Profile",
+                showBack = true,
+                onBack = {
+                    if (hasUnsavedChanges) showCancelDialog = true
+                    else navController.navigate(Routes.Profile.route)
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = BU_RED,
-                    titleContentColor = Color.White
-                )
+                containerColor = BU_RED
             )
         }
     ) { pad ->

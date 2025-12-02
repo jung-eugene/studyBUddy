@@ -29,6 +29,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,18 +54,8 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "My Profile",
-                        fontWeight = FontWeight.Bold,
-                        color = color.onPrimary
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = color.primary,
-                    titleContentColor = color.onPrimary
-                ),
+            StudyBuddyTopBar(
+                title = "My Profile",
                 actions = {
                     IconButton(onClick = { navController.navigate("editProfile") }) {
                         Icon(

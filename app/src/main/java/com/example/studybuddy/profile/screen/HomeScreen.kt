@@ -41,8 +41,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -68,6 +66,7 @@ import com.example.studybuddy.User
 import com.example.studybuddy.UserViewModel
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +76,7 @@ fun MatchPopup(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("🔥 It's a Match!") },
+        title = { Text("It's a Match!") },
         text = {
             Text("You and ${matchedUser.name} both liked each other.\nStart a study session!")
         },
@@ -112,15 +111,7 @@ fun HomeScreen(
     val candidate = homeState.candidates.getOrNull(homeState.currentIndex)
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("studyBUddy") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = red
-                )
-            )
-        },
+        topBar = { StudyBuddyTopBar(title = "studyBUddy") },
         bottomBar = { BottomNavBar(navController) }
     ) { pad ->
 

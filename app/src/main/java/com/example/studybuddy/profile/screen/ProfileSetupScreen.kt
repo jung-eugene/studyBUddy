@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +19,7 @@ import androidx.navigation.NavController
 import com.example.studybuddy.ProfileSetupState
 import com.example.studybuddy.ProfileSetupViewModel
 import com.example.studybuddy.Routes
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 
 // The profile setup page (will include everyinformation that will be used later on for filtering to find the studyBUddy match)
@@ -46,30 +46,12 @@ fun ProfileSetupScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Step $currentStep of 4", fontWeight = FontWeight.Bold) },
-
-                navigationIcon = {
-                    if (currentStep > 1) {
-                        IconButton(onClick = { currentStep -= 1 }) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "Back",
-                                tint = Color.White
-                            )
-                        }
-                    }
-                },
-
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = Color.White,
-                    navigationIconContentColor = Color.White
-                )
+            StudyBuddyTopBar(
+                title = "Step $currentStep of 4",
+                showBack = currentStep > 1,
+                onBack = { currentStep -= 1 }
             )
         }
-
-
     ) { pad ->
         Column(
             modifier = Modifier
