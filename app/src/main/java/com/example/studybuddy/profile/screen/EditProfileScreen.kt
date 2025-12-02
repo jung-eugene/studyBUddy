@@ -572,12 +572,8 @@ fun AvailabilityEditor(
         Spacer(Modifier.height(16.dp))
 
         if (selected.isNotEmpty()) {
-            Text("Selected Times:", fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(8.dp))
-
             FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 selected.forEach { label ->
                     AssistChip(
