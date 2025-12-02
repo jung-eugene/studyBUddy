@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.Color
 //Primary red brand color — used for buttons, app bars, and accents
 val BUPrimary = Color(0xFFD32F2F)      // Bright Red
 val BUPrimaryDark = Color(0xFFB71C1C)  // Darker red
-val BULight = Color(0xFFFFCDD2)        // Light tint of red
+val BULight = Color(0xFFFEF2F2)        // Light tint of red
 
 //Neutral and background tones
 val BUBackground = Color(0xFFFDFDFD)   // App background light gray

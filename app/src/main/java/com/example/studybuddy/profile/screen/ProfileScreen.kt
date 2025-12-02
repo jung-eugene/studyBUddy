@@ -2,6 +2,7 @@ package com.example.studybuddy.profile.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
@@ -27,6 +28,8 @@ import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,21 +58,21 @@ fun ProfileScreen(
             TopAppBar(
                 title = {
                     Text(
-                        "My Profile",
-                        fontWeight = FontWeight.Bold,
-                        color = color.onPrimary
+                        "Profile",
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = color.primary,
-                    titleContentColor = color.onPrimary
+                    containerColor = Color.White,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground
                 ),
                 actions = {
                     IconButton(onClick = { navController.navigate("editProfile") }) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = "Edit Profile",
-                            tint = color.onPrimary
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -117,16 +120,16 @@ fun ProfileScreen(
             } else {
                 Box(
                     modifier = Modifier
-                        .size(120.dp)
+                        .size(80.dp)
                         .clip(CircleShape)
-                        .background(color.secondary),
+                        .background(Color(0xFFD32F2F))
+                        .padding(20.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        Icons.Default.Person,
+                        imageVector = Icons.Filled.School,
                         contentDescription = null,
-                        tint = color.primary,
-                        modifier = Modifier.size(60.dp)
+                        tint = Color.White,
                     )
                 }
             }
@@ -136,26 +139,47 @@ fun ProfileScreen(
             // Name and Major
             Text(
                 text = user.name.ifBlank { "Unnamed User" },
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = color.onBackground
             )
+
+            Spacer(Modifier.height(4.dp))
+
             Text(
                 "${user.major} • ${user.year}",
+                style = MaterialTheme.typography.bodyMedium,
                 color = color.onSurfaceVariant
             )
 
             Spacer(Modifier.height(24.dp))
 
+            // BIO with icon
+            if (user.bio.isNotBlank()) {
+                SectionCard(title = "About Me", icon = Icons.Default.Person) {
+                    Text(user.bio,
+                        color = color.onBackground,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
             // COURSES with icon
-            SectionCard(title = "Courses", icon = Icons.Default.School) {
+            SectionCard(title = "Courses", icon = Icons.Default.Book) {
                 if (user.courses.isEmpty()) {
-                    Text("No courses added.", color = color.onSurfaceVariant)
+                    Text("No courses added.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = color.onSurfaceVariant)
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(user.courses) { course ->
                             AssistChip(
                                 onClick = {},
-                                label = { Text(course, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                                shape = RoundedCornerShape(50),
+                                label = { Text(course,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    style = MaterialTheme.typography.bodyMedium
+                                ) },
                                 colors = AssistChipDefaults.assistChipColors(
                                     containerColor = color.secondary,
                                     labelColor = color.primary
@@ -168,22 +192,29 @@ fun ProfileScreen(
 
             // AVAILABILITY with icon
             if (user.availability.isNotBlank()) {
-                SectionCard(title = "Availability", icon = Icons.Default.Timer) {
-                    Text(user.availability, color = color.onBackground)
+                SectionCard(title = "Availability", icon = Icons.Default.AccessTime) {
+                    Text(user.availability,
+                        color = color.onBackground,
+                        style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
             // STUDY PREFERENCES with icon
             SectionCard(title = "Study Preferences", icon = Icons.Default.CalendarToday) {
                 if (user.studyPreferences.isEmpty()) {
-                    Text("No preferences selected.", color = color.onSurfaceVariant)
+                    Text("No preferences selected.",
+                        color = color.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(user.studyPreferences) { pref ->
                             AssistChip(
                                 onClick = {},
-                                label = { Text(pref) },
-                                colors = AssistChipDefaults.assistChipColors(
+                                shape = RoundedCornerShape(50),
+                                label = { Text(pref,
+                                    style = MaterialTheme.typography.bodyMedium) },
+                                    colors = AssistChipDefaults.assistChipColors(
                                     containerColor = color.secondary,
                                     labelColor = color.primary
                                 )
@@ -193,20 +224,17 @@ fun ProfileScreen(
                 }
             }
 
-            // BIO without icon
-            if (user.bio.isNotBlank()) {
-                SectionCard(title = "About Me") {
-                    Text(user.bio, color = color.onBackground)
-                }
-            }
-
             // SETTINGS with dark mode icon
             SectionCard(title = "Settings", icon = Icons.Default.DarkMode) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Dark Mode", modifier = Modifier.weight(1f), color = color.onBackground)
+                    Text("Dark Mode",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f),
+                        color = color.onBackground
+                    )
                     Switch(
                         checked = darkMode,
                         onCheckedChange = { enabled ->
@@ -216,13 +244,16 @@ fun ProfileScreen(
                         },
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = color.primary,
-                            checkedTrackColor = color.secondary
-                        )
+                            checkedTrackColor = color.secondary,
+                            uncheckedThumbColor = color.primary,
+                            uncheckedTrackColor = color.secondary
+                        ),
+                        modifier = Modifier.scale(0.85f)
                     )
                 }
             }
 
-            Spacer(Modifier.height(24.dp))
+            Spacer(Modifier.height(8.dp))
 
             // LOGOUT BUTTON
             Button(
@@ -232,7 +263,7 @@ fun ProfileScreen(
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(45.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = color.primary)
             ) {
                 Text("Log Out", color = color.onPrimary, fontWeight = FontWeight.Bold)
@@ -240,6 +271,7 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(16.dp))
 
+            // FOOTER
             Text("studyBUddy", color = color.primary, fontWeight = FontWeight.Bold)
             Text(
                 "Find your perfect study partner!",
@@ -261,28 +293,40 @@ fun SectionCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 8.dp),
+            .padding(vertical = 8.dp)
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(16.dp)
+            ),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = color.surface),
-        elevation = CardDefaults.cardElevation(4.dp)
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(Modifier.padding(16.dp)) {
+
+            // Title row
             Row(verticalAlignment = Alignment.CenterVertically) {
+
                 if (icon != null) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = color.primary,
-                        modifier = Modifier.size(24.dp)
+                        tint = Color(0xFF717182),
+                        modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
                 }
+
                 Text(
                     title,
-                    color = color.primary,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                    color = Color.Black,
+                    style = MaterialTheme.typography.bodyMedium
                 )
             }
+
             Spacer(Modifier.height(8.dp))
             content()
         }

@@ -36,6 +36,7 @@ import com.example.studybuddy.UserViewModel
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.outlined.FavoriteBorder
 
 /**
@@ -429,7 +430,7 @@ private fun UserCardCompact(user: User) {
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        Icons.Filled.CalendarMonth,
+                        Icons.Filled.CalendarToday,
                         contentDescription = null,
                         tint = Color(0xFF6B6B6B)
                     )
