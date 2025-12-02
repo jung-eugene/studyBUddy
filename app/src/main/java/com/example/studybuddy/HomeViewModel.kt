@@ -25,8 +25,9 @@ class HomeViewModel(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState
 
-    private val currentUid = auth.currentUser?.uid
     private var currentUser: User? = null
+
+    private fun currentUid(): String? = auth.currentUser?.uid
 
     // ---------------------------------------------------------
     // RECEIVE USERS + FILTER BY SHARED COURSES
@@ -37,21 +38,23 @@ class HomeViewModel(
         // Do async work (fetch likes/matches) and then update state
         _uiState.value = _uiState.value.copy(isLoading = true)
         viewModelScope.launch {
+            val uid = currentUid()
+
             // Save current user for filtering
-            currentUser = allUsers.find { it.id == currentUid }
+            currentUser = allUsers.find { it.id == uid }
 
             val myCourses = currentUser?.courses?.toSet() ?: emptySet()
 
             // Fetch ids to exclude: already liked + already matched + self
-            val likedIds = currentUid?.let { matchRepo.getLikedIdsForUser(it) } ?: emptyList()
-            val matchedIds = currentUid?.let { matchRepo.getMatchIdsForUser(it) } ?: emptyList()
-            val excluded = (likedIds + matchedIds + listOfNotNull(currentUid)).toSet()
+            val likedIds = uid?.let { matchRepo.getLikedIdsForUser(it) } ?: emptyList()
+            val matchedIds = uid?.let { matchRepo.getMatchIdsForUser(it) } ?: emptyList()
+            val excluded = (likedIds + matchedIds + listOfNotNull(uid)).toSet()
 
-            if (currentUser == null) {
-                Log.w(TAG_HOME, "currentUser not found (currentUid=$currentUid). Using fallback filtering.")
+            if (uid == null || currentUser == null) {
+                Log.w(TAG_HOME, "currentUser not found (currentUid=$uid). Using fallback filtering.")
             }
 
-            val filtered = if (currentUid != null) {
+            val filtered = if (uid != null) {
                 if (currentUser == null) {
                     // Fallback: exclude only the excluded ids, do not require shared courses
                     allUsers.filter { it.id !in excluded }
@@ -97,7 +100,11 @@ class HomeViewModel(
     // ---------------------------------------------------------
     fun likeCurrent(onMatch: (Boolean, User?) -> Unit) {
         val target = getCurrentCandidate() ?: return
-        val myUid = currentUid ?: return
+        val myUid = currentUid()
+        if (myUid == null) {
+            Log.w(TAG_HOME, "Cannot like ${target.id}: no signed-in user")
+            return
+        }
 
         Log.d(TAG_HOME, "Liking ${target.id}...")
 
