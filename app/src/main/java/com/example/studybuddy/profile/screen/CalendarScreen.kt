@@ -102,6 +102,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 private const val TAG = "CalendarScreen"
 
@@ -134,7 +135,7 @@ private val durationOptions = listOf(
 @Composable
 fun CalendarScreen(
     navController: NavHostController,
-    calendarViewModel: CalendarViewModel = viewModel()
+    calendarViewModel: CalendarViewModel
 ) {
     /*
     * Compose-level scoped references used throughout the screen for context + coroutine helpers.
@@ -228,7 +229,10 @@ fun CalendarScreen(
     /*
     * actual ui for the user in calendar screen
     */
-    Scaffold(bottomBar = { BottomNavBar(navController) }) { padding ->
+    Scaffold(
+        topBar = { StudyBuddyTopBar(title = "Calendar") },
+        bottomBar = { BottomNavBar(navController) }
+    ) { padding ->
         Column(
             modifier = Modifier
                 .padding(padding)
@@ -237,11 +241,6 @@ fun CalendarScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Text(
-                text = "Calendar",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
-            )
 
             GoogleAccountStatusCard(
                 email = signedInEmail,

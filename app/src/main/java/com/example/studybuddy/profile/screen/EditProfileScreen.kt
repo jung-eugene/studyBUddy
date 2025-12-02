@@ -26,6 +26,7 @@ import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
+import com.example.studybuddy.ui.StudyBuddyTopBar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.CircleShape
@@ -135,24 +136,14 @@ fun EditProfileScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
-            TopAppBar(
-                title = { Text("Edit Profile", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (hasUnsavedChanges) showCancelDialog = true
-                        else navController.navigate(Routes.Profile.route)
-                    }) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = Color.Black
-                        )
-                    }
+            StudyBuddyTopBar(
+                title = "Edit Profile",
+                showBack = true,
+                onBack = {
+                    if (hasUnsavedChanges) showCancelDialog = true
+                    else navController.navigate(Routes.Profile.route)
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = Color.Black
-                )
+                containerColor = BU_RED
             )
         }
     ) { pad ->

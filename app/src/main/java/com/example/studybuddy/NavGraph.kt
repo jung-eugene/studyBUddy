@@ -1,7 +1,6 @@
 package com.example.studybuddy
 
 import androidx.compose.runtime.Composable
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,7 +10,9 @@ fun StudyBuddyNavGraph(
     navController: NavHostController,
     userVM: UserViewModel,
     authVM: AuthViewModel,
-    setupVM: ProfileSetupViewModel
+    setupVM: ProfileSetupViewModel,
+    calendarVM: CalendarViewModel,
+    homeVM: HomeViewModel
 ) {
     NavHost(
         navController = navController,
@@ -43,7 +44,8 @@ fun StudyBuddyNavGraph(
         composable(Routes.Home.route) {
             HomeScreen(
                 navController = navController,
-                userVM = userVM
+                userVM = userVM,
+                homeVM = homeVM
             )
         }
 
@@ -51,7 +53,7 @@ fun StudyBuddyNavGraph(
         composable(Routes.Matches.route) {
             MatchesScreen(
                 navController = navController,
-//                userVM = userVM
+                userVM = userVM
             )
         }
 
@@ -59,7 +61,7 @@ fun StudyBuddyNavGraph(
         composable(Routes.Calendar.route) {
             CalendarScreen(
                 navController = navController,
-                calendarViewModel = viewModel()
+                calendarViewModel = calendarVM
             )
         }
 

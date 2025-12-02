@@ -1,5 +1,6 @@
 package com.example.studybuddy
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
@@ -27,7 +28,7 @@ data class ProfileSetupState(
 // ViewModel handling 4-step onboarding flow
 // ------------------------------
 class ProfileSetupViewModel : ViewModel() {
-
+    private val TAG = "SetupVM"
     private val _state = MutableStateFlow(ProfileSetupState())
     val state: StateFlow<ProfileSetupState> = _state
 
@@ -38,21 +39,40 @@ class ProfileSetupViewModel : ViewModel() {
     // --------------------------
     // Update helper functions
     // --------------------------
-    fun updateName(v: String) = _state.update { it.copy(name = v) }
-    fun updateMajor(v: String) = _state.update { it.copy(major = v) }
-    fun updateYear(v: String) = _state.update { it.copy(year = v) }
-    fun updateBio(v: String) = _state.update { it.copy(bio = v) }
+    fun updateName(v: String) {
+        Log.d(TAG, "updateName: $v")
+        _state.update { it.copy(name = v) }
+    }
+    fun updateMajor(v: String) {
+        Log.d(TAG, "updateMajor: $v")
+        _state.update { it.copy(major = v) }
+    }
 
-    fun addCourse(course: String) =
+    fun updateYear(v: String) {
+        Log.d(TAG, "updateYear: $v")
+        _state.update { it.copy(year = v) }
+    }
+
+    fun updateBio(v: String) {
+        Log.d(TAG, "updateBio: $v")
+        _state.update { it.copy(bio = v) }
+    }
+
+    fun addCourse(course: String) {
+        Log.d(TAG, "addCourse: $course")
         _state.update { it.copy(courses = it.courses + course) }
+    }
 
     fun removeCourse(course: String) =
         _state.update { it.copy(courses = it.courses - course) }
 
-    fun toggleAvailability(slot: String) = _state.update {
-        val updated = it.availability.toMutableList()
-        if (slot in updated) updated.remove(slot) else updated.add(slot)
-        it.copy(availability = updated)
+    fun toggleAvailability(slot: String) {
+        Log.d(TAG, "toggleAvailability: $slot")
+        _state.update {
+            val updated = it.availability.toMutableList()
+            if (slot in updated) updated.remove(slot) else updated.add(slot)
+            it.copy(availability = updated)
+        }
     }
 
     fun togglePref(pref: String) = _state.update {
@@ -66,6 +86,7 @@ class ProfileSetupViewModel : ViewModel() {
     // --------------------------
     fun completeProfile() {
         val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        Log.i(TAG, "Saving complete profile for $uid")
         val profile = _state.value
 
         val user = User(
@@ -77,8 +98,8 @@ class ProfileSetupViewModel : ViewModel() {
             availability = profile.availability.joinToString(", "),
             studyPreferences = profile.preferences,
             bio = profile.bio,
-            photoUrl = "",        // required so Firestore never stores null
-            darkMode = false,     // required default since your VM loads this
+            photoUrl = "",
+            darkMode = false,
             profileSetupComplete = true
         )
 
@@ -89,10 +110,10 @@ class ProfileSetupViewModel : ViewModel() {
                     .document(uid)
                     .set(user)
                     .await()
+                Log.i(TAG, "Profile setup saved successfully for $uid")
                 _profileSaved.value = true  // triggers navigation in UI
             } catch (e: Exception) {
-                e.printStackTrace()
-                // OPTIONAL — Add an error flow if needed
+                Log.e(TAG, "Error saving profile setup for $uid", e)
             }
         }
     }

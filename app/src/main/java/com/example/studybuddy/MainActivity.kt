@@ -23,6 +23,8 @@ class MainActivity : ComponentActivity() {
             val userVM: UserViewModel = viewModel()
             val authVM: AuthViewModel = viewModel()
             val setupVM: ProfileSetupViewModel = viewModel()
+            val calendarVM: CalendarViewModel = viewModel()
+            val homeVM: HomeViewModel = viewModel()
 
             // --- Watch darkMode state ---
             val uiState by userVM.uiState.collectAsState()
@@ -46,7 +48,9 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     userVM = userVM,
                     authVM = authVM,
-                    setupVM = setupVM
+                    setupVM = setupVM,
+                    calendarVM = calendarVM,
+                    homeVM = homeVM
                 )
             }
         }

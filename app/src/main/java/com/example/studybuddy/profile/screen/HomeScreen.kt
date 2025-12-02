@@ -1,82 +1,124 @@
 package com.example.studybuddy.profile.screen
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Book
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.unit.IntOffset
-import kotlin.math.roundToInt
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
-import kotlinx.coroutines.launch
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
+import com.example.studybuddy.HomeViewModel
 import com.example.studybuddy.User
 import com.example.studybuddy.UserViewModel
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
+import com.example.studybuddy.ui.StudyBuddyTopBar
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.outlined.FavoriteBorder
 
-/**
- * Home screen displaying swipeable list of potential study partners.
- * Swipe right to like, left to skip.
- */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MatchPopup(
+    matchedUser: User,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("It's a Match!") },
+        text = {
+            Text("You and ${matchedUser.name} both liked each other.\nStart a study session!")
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Awesome!") }
+        }
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     navController: NavHostController,
-    userVM: UserViewModel
+    userVM: UserViewModel,
+    homeVM: HomeViewModel
 ) {
-    // observe uiState from shared ViewModel
-    val uiState by userVM.uiState.collectAsState()
+    val userState by userVM.uiState.collectAsState()
+    val homeState by homeVM.uiState.collectAsState()
 
-    // load users on first enter
+    var showMatchPopup by remember { mutableStateOf(false) }
+    var matchedUser by remember { mutableStateOf<User?>(null) }
+
     LaunchedEffect(Unit) { userVM.getAllUsers() }
 
-    // the list from Firestore
-    var users by remember { mutableStateOf(listOf<User>()) }
-
-    // update when the ViewModel finishes loading users
-    LaunchedEffect(uiState.allUsers) {
-        users = uiState.allUsers
+    LaunchedEffect(userState.allUsers) {
+        if (userState.allUsers.isNotEmpty()) {
+            homeVM.setCandidates(userState.allUsers)
+        }
     }
 
     val red = Color(0xFFD32F2F)
+    val candidate = homeState.candidates.getOrNull(homeState.currentIndex)
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("studyBUddy") },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = red
-                )
-            )
-        },
+        topBar = { StudyBuddyTopBar(title = "studyBUddy") },
         bottomBar = { BottomNavBar(navController) }
     ) { pad ->
+
         Column(
             modifier = Modifier
                 .padding(pad)
@@ -84,108 +126,143 @@ fun HomeScreen(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (users.isEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 80.dp), // lifts above bottom nav
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Grey circle with heart icon
-                    Surface(
-                        shape = CircleShape,
-                        color = Color(0xFFF0F0F3),
-                        modifier = Modifier.size(96.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                            Icon(
-                                imageVector = Icons.Outlined.FavoriteBorder,
-                                contentDescription = null,
-                                tint = Color(0xFF777777),
-                                modifier = Modifier.size(48.dp)
-                            )
+
+            if (homeState.isLoading) {
+                CircularProgressIndicator(color = red)
+                return@Column
+            }
+
+            if (candidate == null) {
+                EmptyStateUI()
+                return@Column
+            }
+
+            CardDeck(
+                user = candidate,
+                onLike = {
+                    userVM.addLocalLike(candidate)
+                    homeVM.likeCurrent { isMatch, user ->
+                        if (isMatch && user != null) {
+                            userVM.promoteLocalToMutual(user.id)
+                            matchedUser = user
+                            showMatchPopup = true
                         }
                     }
+                },
+                onSkip = { homeVM.skipCurrent() }
+            )
 
-                    Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(14.dp))
 
-                    Text(
-                        "No More Profiles",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color(0xFF333333)
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Text(
-                        "Check back later for new study buddies!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF777777)
-                    )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White,
+                    tonalElevation = 1.dp,
+                    shadowElevation = 8.dp,
+                    border = BorderStroke(2.dp, red),
+                    modifier = Modifier.size(70.dp)
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = { homeVM.skipCurrent() }) {
+                            Icon(Icons.Filled.Close, contentDescription = "Skip", tint = red)
+                        }
+                    }
                 }
-            } else {
-                val user = users.first()
 
-                CardDeck(
-                    users = users,
-                    onLike = { users = users.drop(1) },
-                    onSkip = { users = users.drop(1) }
-                )
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 14.dp),
-                    horizontalArrangement = Arrangement.spacedBy(30.dp, Alignment.CenterHorizontally),
-                    verticalAlignment = Alignment.CenterVertically
+                Surface(
+                    shape = CircleShape,
+                    color = red,
+                    tonalElevation = 2.dp,
+                    shadowElevation = 10.dp,
+                    modifier = Modifier.size(72.dp)
                 ) {
-                    // Skip button, advances to next card
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White,
-                        tonalElevation = 1.dp,
-                        shadowElevation = 8.dp,
-                        border = BorderStroke(2.dp, red),
-                        modifier = Modifier.size(70.dp)
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { users = users.drop(1) }) {
-                                Icon(
-                                    Icons.Filled.Close,
-                                    contentDescription = "Skip",
-                                    tint = red,
-                                    modifier = Modifier.size(30.dp)
-                                )
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        IconButton(onClick = {
+                            homeVM.likeCurrent { isMatch, user ->
+                                if (isMatch && user != null) {
+                                    matchedUser = user
+                                    showMatchPopup = true
+                                }
                             }
-                        }
-                    }
-
-                    // Like button, advances to next card
-                    Surface(
-                        shape = CircleShape,
-                        color = red,
-                        tonalElevation = 2.dp,
-                        shadowElevation = 10.dp,
-                        modifier = Modifier
-                            .size(72.dp)
-                            .shadow(8.dp, CircleShape, clip = false)
-                    ) {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            IconButton(onClick = { users = users.drop(1) }) {
-                                Icon(
-                                    Icons.Outlined.Favorite,
-                                    contentDescription = "Like",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(30.dp)
-                                )
-                            }
+                        }) {
+                            Icon(
+                                Icons.Outlined.Favorite,
+                                contentDescription = "Like",
+                                tint = Color.White
+                            )
                         }
                     }
                 }
             }
         }
     }
+
+    if (showMatchPopup && matchedUser != null) {
+        MatchPopup(
+            matchedUser = matchedUser!!,
+            onDismiss = { showMatchPopup = false }
+        )
+    }
+}
+
+@Composable
+private fun EmptyStateUI() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 80.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = Color(0xFFF0F0F3),
+            modifier = Modifier.size(96.dp)
+        ) {
+            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                Icon(
+                    imageVector = Icons.Outlined.FavoriteBorder,
+                    contentDescription = null,
+                    tint = Color(0xFF777777),
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(20.dp))
+
+        Text(
+            "No More Profiles",
+            style = MaterialTheme.typography.titleMedium,
+            color = Color(0xFF333333)
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            "Check back later for new study buddies!",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color(0xFF777777)
+        )
+    }
+}
+
+@Composable
+fun CardDeck(
+    user: User,
+    onLike: () -> Unit,
+    onSkip: () -> Unit
+) {
+    SwipeableUserCard(
+        user = user,
+        onLike = onLike,
+        onSkip = onSkip
+    )
 }
 
 @Composable
@@ -198,24 +275,23 @@ private fun SwipeableUserCard(
     val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
-    val swipeThreshold = with(density) { 120.dp.toPx() } // how far to swipe to trigger action
+    val threshold = with(density) { 120.dp.toPx() }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .pointerInput(Unit) {
                 detectDragGestures(
-                    onDrag = { change, dragAmount ->
+                    onDrag = { change, drag ->
                         change.consume()
                         scope.launch {
-                            offsetX.snapTo(offsetX.value + dragAmount.x)
+                            offsetX.snapTo(offsetX.value + drag.x)
                         }
                     },
                     onDragEnd = {
                         scope.launch {
                             when {
-                                offsetX.value > swipeThreshold -> {
-                                    // Swiped right --> like
+                                offsetX.value > threshold -> {
                                     offsetX.animateTo(
                                         targetValue = with(density) { 400.dp.toPx() },
                                         animationSpec = tween(200)
@@ -223,8 +299,7 @@ private fun SwipeableUserCard(
                                     onLike()
                                     offsetX.snapTo(0f)
                                 }
-                                offsetX.value < -swipeThreshold -> {
-                                    // Swiped left --> skip
+                                offsetX.value < -threshold -> {
                                     offsetX.animateTo(
                                         targetValue = with(density) { -400.dp.toPx() },
                                         animationSpec = tween(200)
@@ -233,7 +308,6 @@ private fun SwipeableUserCard(
                                     offsetX.snapTo(0f)
                                 }
                                 else -> {
-                                    // Not far enough --> snap back
                                     offsetX.animateTo(0f, animationSpec = tween(200))
                                 }
                             }
@@ -243,88 +317,10 @@ private fun SwipeableUserCard(
             }
             .offset { IntOffset(offsetX.value.roundToInt(), 0) }
             .graphicsLayer {
-                rotationZ = rotation // adds angled swipe
+                rotationZ = rotation
             }
     ) {
         UserCardCompact(user)
-    }
-}
-
-@Composable
-fun CardDeck(
-    users: List<User>,
-    onLike: () -> Unit,
-    onSkip: () -> Unit
-) {
-    val topUser = users.firstOrNull() ?: return
-
-    val offsetX = remember { Animatable(0f) }
-    val scope = rememberCoroutineScope()
-
-    val rotation = (offsetX.value / 60).coerceIn(-10f, 10f)
-
-    val density = LocalDensity.current
-    val swipeThreshold = with(density) { 120.dp.toPx() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(500.dp)
-    ) {
-        // Slightly visible next card under the top card
-        if (users.size > 1) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .padding(top = 20.dp)
-                    .graphicsLayer {
-                        scaleX = 0.96f
-                        scaleY = 0.96f
-                        alpha = 0.7f
-                    }
-            ) {
-                UserCardCompact(users[1])
-            }
-        }
-
-        // Top swipeable card
-        Box(
-            modifier = Modifier
-                .matchParentSize()
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDrag = { change, dragAmount ->
-                            change.consume()
-                            scope.launch {
-                                offsetX.snapTo(offsetX.value + dragAmount.x)
-                            }
-                        },
-                        onDragEnd = {
-                            scope.launch {
-                                when {
-                                    offsetX.value > swipeThreshold -> {
-                                        offsetX.animateTo(with(density) { 500.dp.toPx() })
-                                        onLike()
-                                        offsetX.snapTo(0f)
-                                    }
-                                    offsetX.value < -swipeThreshold -> {
-                                        offsetX.animateTo(with(density) { -500.dp.toPx() })
-                                        onSkip()
-                                        offsetX.snapTo(0f)
-                                    }
-                                    else -> {
-                                        offsetX.animateTo(0f, animationSpec = tween(200))
-                                    }
-                                }
-                            }
-                        }
-                    )
-                }
-                .offset { IntOffset(offsetX.value.toInt(), 0) }
-                .graphicsLayer { rotationZ = rotation }
-        ) {
-            UserCardCompact(topUser)
-        }
     }
 }
 
@@ -344,7 +340,7 @@ private fun UserCardCompact(user: User) {
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
-        // Header
+
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -352,7 +348,6 @@ private fun UserCardCompact(user: User) {
                 .padding(top = 18.dp, bottom = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // "avatar" icon - replace with profile pic in the future
             Box(
                 modifier = Modifier
                     .size(68.dp)
@@ -381,53 +376,46 @@ private fun UserCardCompact(user: User) {
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
                 )
 
-                // Major and year of user
-                val yearText = user.year.ifBlank { "Year N/A" }
-                val majorText = user.major.ifBlank { "Major N/A" }
                 Text(
-                    text = "$majorText • $yearText",
+                    text = "${user.major} • ${user.year}",
                     color = Color(0xFFFAFAFA),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
         }
 
-        // Body
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            // Current Courses
+
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Filled.Book, contentDescription = null, tint = Color(0xFF6B6B6B))
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "Current Courses",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
+                    style = MaterialTheme.typography.titleMedium
                 )
             }
             if (user.courses.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(2.dp) // tighter rows
                 ) {
                     user.courses.forEach { course ->
                         Chip(
-                            text = course.trim(),
+                            text = course,
                             bg = lightRed,
                             fg = red
                         )
                     }
                 }
             } else {
-                Text("No courses added.", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+                Text("No courses added.", color = Color.Gray)
             }
 
-            // Study Preferences
             if (user.studyPreferences.isNotEmpty()) {
-                Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.CalendarToday,
@@ -435,38 +423,26 @@ private fun UserCardCompact(user: User) {
                         tint = Color(0xFF6B6B6B)
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text(
-                        "Study Preferences",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
-                    )
+                    Text("Study Preferences", style = MaterialTheme.typography.titleMedium)
                 }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     user.studyPreferences.forEach { pref ->
                         Chip(text = pref, bg = chipGreyBg, fg = chipGreyText)
                     }
                 }
             }
 
-            // Availability
             if (user.availability.isNotBlank()) {
-                Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.AccessTime, contentDescription = null, tint = Color(0xFF6B6B6B))
                     Spacer(Modifier.width(8.dp))
-                    Text(
-                        "Available",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal)
-                    )
+                    Text("Available", style = MaterialTheme.typography.titleMedium)
                 }
-                val slots = user.availability.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    slots.forEach { s -> Chip(text = s, bg = chipGreyBg, fg = chipGreyText) }
+                val slots = user.availability.split(",")
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    slots.forEach {
+                        Chip(text = it.trim(), bg = chipGreyBg, fg = chipGreyText)
+                    }
                 }
             }
         }

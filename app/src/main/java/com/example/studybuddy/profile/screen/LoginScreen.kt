@@ -1,5 +1,6 @@
 package com.example.studybuddy.profile.screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,6 +36,17 @@ fun LoginScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+
+        if (uid != null) {
+            Log.d("LoginScreen", "User already logged in, loading profile for darkMode")
+            userVM.loadUserProfile(uid)
+        } else {
+            Log.d("LoginScreen", "No user logged in — resetting darkMode")
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -166,8 +178,12 @@ fun LoginScreen(
                                     val uid = FirebaseAuth.getInstance().currentUser?.uid
                                     if (uid != null) {
                                         scope.launch {
-                                            val setupComplete = userVM.isProfileSetupComplete(uid)
+                                            // Load user profile FIRST → needed for dark mode to apply instantly
                                             userVM.loadUserProfile(uid)
+
+                                            // Check if user completed profile setup
+                                            val setupComplete = userVM.isProfileSetupComplete(uid)
+                                            Log.d("LoginScreen", "Profile setup complete: $setupComplete")
 
                                             if (setupComplete) {
                                                 navController.navigate(Routes.Home.route) {

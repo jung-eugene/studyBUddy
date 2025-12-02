@@ -1,0 +1,157 @@
+package com.example.studybuddy
+
+import android.util.Log
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+private const val TAG_HOME = "HomeViewModel"
+
+data class HomeUiState(
+    val candidates: List<User> = emptyList(),
+    val currentIndex: Int = 0,
+    val isLoading: Boolean = false,
+    val error: String? = null
+)
+
+class HomeViewModel(
+    private val matchRepo: MatchRepository = MatchRepository(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState
+
+    private var currentUser: User? = null
+
+    private fun currentUid(): String? = auth.currentUser?.uid
+
+    // ---------------------------------------------------------
+    // RECEIVE USERS + FILTER BY SHARED COURSES
+    // ---------------------------------------------------------
+    fun setCandidates(allUsers: List<User>) {
+        Log.d(TAG_HOME, "setCandidates() received ${allUsers.size} users")
+
+        // Do async work (fetch likes/matches) and then update state
+        _uiState.value = _uiState.value.copy(isLoading = true)
+        viewModelScope.launch {
+            val uid = currentUid()
+
+            // Save current user for filtering
+            currentUser = allUsers.find { it.id == uid }
+
+            val myCourses = currentUser?.courses?.toSet() ?: emptySet()
+
+            // Fetch ids to exclude: already liked + already matched + self
+            val likedIds = uid?.let { matchRepo.getLikedIdsForUser(it) } ?: emptyList()
+            val matchedIds = uid?.let { matchRepo.getMatchIdsForUser(it) } ?: emptyList()
+            val excluded = (likedIds + matchedIds + listOfNotNull(uid)).toSet()
+
+            if (uid == null || currentUser == null) {
+                Log.w(TAG_HOME, "currentUser not found (currentUid=$uid). Using fallback filtering.")
+            }
+
+            val filtered = if (uid != null) {
+                if (currentUser == null) {
+                    // Fallback: exclude only the excluded ids, do not require shared courses
+                    allUsers.filter { it.id !in excluded }
+                } else {
+                    allUsers.filter { user ->
+                        user.id !in excluded &&
+                                user.courses.any { it in myCourses }
+                    }
+                }
+            } else {
+                allUsers.filter { it.id !in excluded }
+            }
+
+            Log.i(TAG_HOME, "Filtered to ${filtered.size} users (after excluding liked/matched/self)")
+
+            _uiState.value = HomeUiState(
+                candidates = filtered,
+                currentIndex = 0,
+                isLoading = false,
+                error = null
+            )
+        }
+    }
+
+    // ---------------------------------------------------------
+    // GET CURRENT CANDIDATE
+    // ---------------------------------------------------------
+    fun getCurrentCandidate(): User? {
+        val state = _uiState.value
+        return state.candidates.getOrNull(state.currentIndex)
+    }
+
+    // ---------------------------------------------------------
+    // SKIP CURRENT USER
+    // ---------------------------------------------------------
+    fun skipCurrent() {
+        Log.d(TAG_HOME, "Skipping user...")
+        moveToNext()
+    }
+
+    // ---------------------------------------------------------
+    // LIKE + CALLBACK FOR MATCH POPUP
+    // ---------------------------------------------------------
+    fun likeCurrent(onMatch: (Boolean, User?) -> Unit) {
+        val target = getCurrentCandidate() ?: return
+        val myUid = currentUid()
+        if (myUid == null) {
+            Log.w(TAG_HOME, "Cannot like ${target.id}: no signed-in user")
+            return
+        }
+
+        Log.d(TAG_HOME, "Liking ${target.id}...")
+
+        viewModelScope.launch {
+            try {
+                val isMutual = matchRepo.sendLike(myUid, target.id)
+
+                // Optimistically remove the target from local candidates so it won't reappear
+                val state = _uiState.value
+                val updated = state.candidates.filter { it.id != target.id }
+                // Keep currentIndex stable (the next candidate will now occupy this index). If list is empty, index becomes 0.
+                val newIndex = if (updated.isEmpty()) 0 else state.currentIndex.coerceAtMost(updated.size - 1)
+                _uiState.value = state.copy(candidates = updated, currentIndex = newIndex)
+
+                if (isMutual) {
+                    Log.i(TAG_HOME, "MUTUAL MATCH with ${target.name}!")
+                    onMatch(true, target)  // return matched user to popup
+                } else {
+                    onMatch(false, null)
+                }
+
+            } catch (e: Exception) {
+                Log.e(TAG_HOME, "Error liking ${target.id}", e)
+                onMatch(false, null)
+            }
+        }
+    }
+
+    // ---------------------------------------------------------
+    // ADVANCE TO NEXT CANDIDATE SAFELY
+    // ---------------------------------------------------------
+    private fun moveToNext() {
+        val state = _uiState.value
+        val nextIndex = state.currentIndex + 1
+
+        if (nextIndex >= state.candidates.size) {
+            Log.d(TAG_HOME, "No more candidates!")
+            _uiState.value = state.copy(
+                currentIndex = state.candidates.size  // stays safe
+            )
+            return
+        }
+
+        Log.d(TAG_HOME, "Moving to card index $nextIndex")
+
+        _uiState.value = state.copy(
+            currentIndex = nextIndex
+        )
+    }
+}

@@ -1,5 +1,6 @@
 package com.example.studybuddy.profile.screen
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,6 +32,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.example.studybuddy.ui.StudyBuddyTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,18 +57,8 @@ fun ProfileScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "Profile",
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.White,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground
-                ),
+            StudyBuddyTopBar(
+                title = "Profile",
                 actions = {
                     IconButton(onClick = { navController.navigate("editProfile") }) {
                         Icon(
@@ -82,18 +74,19 @@ fun ProfileScreen(
         containerColor = color.background
     ) { pad ->
 
-        if (uiState.user == null) {
+        val user = uiState.user
+        if (user == null) {
             Box(
-                Modifier
-                    .fillMaxSize()
-                    .padding(pad),
+                modifier = Modifier
+                    .padding(pad)
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 CircularProgressIndicator(color = color.primary)
             }
+            return@Scaffold
         }
 
-        val user = uiState.user!!
         val scrollState = rememberScrollState()
 
         Column(
@@ -238,8 +231,14 @@ fun ProfileScreen(
                     Switch(
                         checked = darkMode,
                         onCheckedChange = { enabled ->
+                            Log.d("ProfileScreen", "Dark mode toggled: $enabled")
+
                             scope.launch {
+                                // Update Firestore darkMode field
                                 userVM.getDarkMode(uid, enabled)
+
+                                // Reload user profile so MainActivity recomposes theme
+                                userVM.loadUserProfile(uid)
                             }
                         },
                         colors = SwitchDefaults.colors(
