@@ -143,6 +143,40 @@ studyBUddy is actively developed across multiple branches, each implementing key
 
 ---
 
+## 🧪 Testing Strategy
+
+### **1. Console Log Tracing**
+
+* Added detailed `Log.d()` and `Log.e()` statements for:
+  * **Firestore reads/writes** (profile updates, course lists, dark mode toggle)
+  * **Google Calendar API** requests and OAuth responses
+* Helped verify asynchronous operations and identify incorrect document paths or null states.
+
+### **2. Invalid Input & Error Handling Tests**
+
+* Tested incorrect login attempts, missing fields, and broken network cases.
+* Verified Snackbar feedback for user-facing errors.
+* Added `try/catch` blocks in ViewModels
+
+### **3. Manual Device & Emulator Testing**
+
+* UI layout testing on multiple emulator sizes + physical devices.
+* Verified:
+  * Navigation state restoration
+  * Orientation changes
+  * Swipe gestures
+  * Profile editing UX
+  * Camera/gallery image upload flow
+* Confirmed no crashes during onboarding, swiping, or data persistence.
+
+### **4. Feature-Specific Testing**
+
+* **Camera Sensor:** Verified gallery picker + camera intent on supported devices, fallback behavior on emulators.
+* **Google Calendar:** Ensured test accounts correctly received event creation requests.
+* **Firestore Sync:** Confirmed real-time updates to user profile fields and matches.
+
+---
+
 ## 🤖 LLM Usage Disclosure
 
 Throughout development, we used Large Language Models (LLMs) such as ChatGPT and Gemini to support implementation and debugging, but not to auto-generate full features.
