@@ -141,4 +141,20 @@ studyBUddy is actively developed across multiple branches, each implementing key
 - **APIs:** Firebase Auth, Google Calendar 
 - **UI:** Material 3 with dark/light mode support  
 
+---
 
+## 🤖 LLM Usage Disclosure
+
+Throughout development, we used Large Language Models (LLMs) such as ChatGPT and Gemini to support implementation and debugging, but not to auto-generate full features.
+
+**LLM assistance included:**
+
+* Troubleshooting Android Studio / Gradle build errors
+* Debugging Jetpack Compose UI layout issues
+* Suggesting improvements for ViewModel + NavGraph architecture
+* Helping rewrite or optimize Kotlin snippets we already wrote
+* Providing explanations for Firebase, Google Calendar API, and OAuth behavior
+* Reviewing code for edge cases and error-handling gaps
+* Improving documentation and README clarity
+
+All final implementations were reviewed, tested, and refined manually by the development team to ensure correctness, security, and maintainability.
