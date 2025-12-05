@@ -239,17 +239,8 @@ class UserViewModel : ViewModel() {
                     if (u.id.isBlank()) u.copy(id = doc.id) else u
                 }
 
-                // FILTER OUT CURRENT USER
-                val filtered = if (currentUid != null) {
-                    users.filter { it.id != currentUid }
-                } else {
-                    users
-                }
-
-                Log.i(TAG, "Loaded ${filtered.size}/${users.size} users after filtering self")
-
                 _uiState.value = _uiState.value.copy(
-                    allUsers = filtered,
+                    allUsers = users,
                     isLoading = false
                 )
 
