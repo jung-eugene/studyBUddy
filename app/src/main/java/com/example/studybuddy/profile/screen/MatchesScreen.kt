@@ -3,7 +3,6 @@ package com.example.studybuddy.profile.screen
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -16,11 +15,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
+import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.example.studybuddy.ui.StudyBuddyTopBar
@@ -56,28 +55,55 @@ fun MatchesScreen(
                 .padding(pad)
                 .fillMaxSize()
         ) {
-            if (uiState.isLoading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
+            DeletedMatchesButton(
+                onClick = { navController.navigate(Routes.DeletedMatches.route) }
+            )
+
+            when {
+                uiState.isLoading -> {
+                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-                return@Column
+
+                uiState.matches.isEmpty() -> {
+                    EmptyMatchesUI()
+                }
+
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        items(
+                            items = uiState.matches,
+                            key = { it.user.id }
+                        ) { entry ->
+                            MatchCard(
+                                entry = entry,
+                                onUnmatch = { userVM.unmatchUser(entry.user.id) }
+                            )
+                        }
+                    }
+                }
             }
 
-            if (uiState.matches.isEmpty()) {
-                EmptyMatchesUI()
-                return@Column
-            }
+        }
+    }
+}
 
-            LazyColumn(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(uiState.matches) { entry ->
-                    MatchCard(entry)
-                }
-            }
+@Composable
+private fun DeletedMatchesButton(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Button(onClick = onClick) {
+            Text("Deleted Matches")
         }
     }
 }
@@ -126,7 +152,7 @@ fun EmptyMatchesUI() {
 }
 
 @Composable
-fun MatchCard(entry: MatchEntry) {
+fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
     val user = entry.user
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -144,7 +170,7 @@ fun MatchCard(entry: MatchEntry) {
             )
             Spacer(Modifier.width(12.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     user.name,
                     style = MaterialTheme.typography.titleMedium
@@ -170,6 +196,12 @@ fun MatchCard(entry: MatchEntry) {
                         color = Color.Gray
                     )
                 }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            OutlinedButton(onClick = onUnmatch) {
+                Text("Unmatch")
             }
         }
     }

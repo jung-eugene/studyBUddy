@@ -57,6 +57,14 @@ fun StudyBuddyNavGraph(
             )
         }
 
+        // UN-MATCHED
+        composable(Routes.DeletedMatches.route) {
+            DeletedMatchesScreen(
+                navController = navController,
+                userVM = userVM
+            )
+        }
+
         // CALENDAR
         composable(Routes.Calendar.route) {
             CalendarScreen(
@@ -90,6 +98,7 @@ sealed class Routes(val route: String) {
     object Login : Routes("login")
     object Home : Routes("home")
     object Matches : Routes("matches")
+    object DeletedMatches : Routes("deleted_matches")
     object Calendar : Routes("calendar")
     object Profile : Routes("profile")
     object ProfileSetup : Routes("profile_setup")
