@@ -122,7 +122,7 @@ fun Step1Content(
     onNextStep: (Int) -> Unit
 ) {
     // Validate required fields
-    val isStep1Valid = state.name.isNotBlank() && state.major.isNotBlank() && state.year.isNotBlank()
+    val isStep1Valid = state.name.isNotBlank() && state.majors.isNotEmpty() && state.year.isNotBlank()
 
     Column {
         Text("Basic Information", style = MaterialTheme.typography.titleLarge)
@@ -135,11 +135,9 @@ fun Step1Content(
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            value = state.major,
-            onValueChange = setupVM::updateMajor,
-            label = { Text("Major") },
-            modifier = Modifier.fillMaxWidth()
+        MajorMultiSelect(
+            selectedMajors = state.majors,
+            onMajorsChanged = { setupVM.setMajors(it) }
         )
         Spacer(Modifier.height(8.dp))
 

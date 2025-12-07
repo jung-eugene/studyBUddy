@@ -22,6 +22,7 @@ import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
 import com.example.studybuddy.UserViewModel
+import com.example.studybuddy.displayMajors
 import com.google.firebase.auth.FirebaseAuth
 import com.example.studybuddy.ui.StudyBuddyTopBar
 
@@ -128,6 +129,7 @@ fun EmptyMatchesUI() {
 @Composable
 fun MatchCard(entry: MatchEntry) {
     val user = entry.user
+    val majors = user.displayMajors().ifBlank { "Major not set" }
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp)
@@ -150,7 +152,7 @@ fun MatchCard(entry: MatchEntry) {
                     style = MaterialTheme.typography.titleMedium
                 )
                 Text(
-                    "${user.major} • ${user.year}",
+                    "$majors • ${user.year}",
                     color = Color.Gray,
                     style = MaterialTheme.typography.bodyMedium
                 )

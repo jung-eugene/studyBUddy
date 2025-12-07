@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -24,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
+import com.example.studybuddy.BuMajors
+import com.example.studybuddy.MAX_MAJOR_SELECTIONS
+import com.example.studybuddy.majorList
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import com.example.studybuddy.ui.StudyBuddyTopBar
@@ -59,7 +63,7 @@ fun EditProfileScreen(
     }
 
     var name by remember { mutableStateOf("") }
-    var major by remember { mutableStateOf("") }
+    var majors by remember { mutableStateOf(listOf<String>()) }
     var year by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
     var courses by remember { mutableStateOf(listOf<String>()) }
@@ -73,7 +77,7 @@ fun EditProfileScreen(
     LaunchedEffect(user) {
         if (user != null && !initialized) {
             name = user.name
-            major = user.major
+            majors = user.majorList()
             year = user.year
             bio = user.bio
             courses = user.courses
@@ -83,11 +87,11 @@ fun EditProfileScreen(
         }
     }
 
-    val hasUnsavedChanges by remember(name, major, year, bio, courses, availability, studyPreferences) {
+    val hasUnsavedChanges by remember(name, majors, year, bio, courses, availability, studyPreferences) {
         derivedStateOf {
             user?.let { old ->
                 name != old.name ||
-                        major != old.major ||
+                        majors != old.majorList() ||
                         year != old.year ||
                         bio != old.bio ||
                         courses != old.courses ||
@@ -255,12 +259,10 @@ fun EditProfileScreen(
                         textStyle = MaterialTheme.typography.bodyMedium
                     )
 
-                    OutlinedTextField(
-                        value = major,
-                        onValueChange = { major = it },
-                        label = { Text("Major", style = MaterialTheme.typography.bodyMedium) },
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = MaterialTheme.typography.bodyMedium
+                    MajorMultiSelect(
+                        selectedMajors = majors,
+                        onMajorsChanged = { majors = it },
+                        modifier = Modifier.fillMaxWidth()
                     )
 
                     YearDropdown(
@@ -336,7 +338,8 @@ fun EditProfileScreen(
 
                         val updated = original.copy(
                             name = name,
-                            major = major,
+                            majors = majors,
+                            major = majors.firstOrNull() ?: "",
                             year = year,
                             bio = bio,
                             courses = courses,
@@ -412,6 +415,99 @@ fun EditProfileScreen(
                     }) { Text("Choose from Gallery") }
                 }
             )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun MajorMultiSelect(
+    selectedMajors: List<String>,
+    onMajorsChanged: (List<String>) -> Unit,
+    modifier: Modifier = Modifier,
+    maxSelection: Int = MAX_MAJOR_SELECTIONS
+) {
+    var expanded by remember { mutableStateOf(false) }
+    var query by remember { mutableStateOf("") }
+
+    val options = remember(query) {
+        if (query.isBlank()) BuMajors.all
+        else BuMajors.all.filter { it.contains(query, ignoreCase = true) }
+    }
+
+    Column(modifier) {
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = {
+                    query = it
+                    expanded = true
+                },
+                label = { Text("Majors", style = MaterialTheme.typography.bodyMedium) },
+                placeholder = { Text("Search BU majors") },
+                supportingText = {
+                    Text(
+                        "${selectedMajors.size}/$maxSelection selected",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
+                singleLine = true
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier.heightIn(max = 320.dp)
+            ) {
+                options.forEach { option ->
+                    val isSelected = option in selectedMajors
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        trailingIcon = {
+                            if (isSelected) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                            }
+                        },
+                        enabled = isSelected || selectedMajors.size < maxSelection,
+                        onClick = {
+                            val updated = if (isSelected) {
+                                selectedMajors - option
+                            } else {
+                                (selectedMajors + option).distinct().take(maxSelection)
+                            }
+                            onMajorsChanged(updated)
+                        }
+                    )
+                }
+            }
+        }
+
+        if (selectedMajors.isNotEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                selectedMajors.forEach { major ->
+                    AssistChip(
+                        onClick = { onMajorsChanged(selectedMajors - major) },
+                        label = { Text(major) },
+                        trailingIcon = {
+                            Icon(Icons.Default.Close, contentDescription = "Remove $major")
+                        },
+                        colors = AssistChipDefaults.assistChipColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            labelColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
+                }
+            }
         }
     }
 }

@@ -327,6 +327,7 @@ private fun UserCardCompact(user: User) {
     val lightRed = Color(0xFFFFEBEE)
     val chipGreyBg = Color(0xFFF2F2F2)
     val chipGreyText = Color(0xFF202124)
+    val majors = user.displayMajors().ifBlank { "Major not set" }
 
     Card(
         modifier = Modifier
@@ -375,7 +376,7 @@ private fun UserCardCompact(user: User) {
                 )
 
                 Text(
-                    text = "${user.major} • ${user.year}",
+                    text = "$majors • ${user.year}",
                     color = Color(0xFFFAFAFA),
                     style = MaterialTheme.typography.bodyMedium
                 )
