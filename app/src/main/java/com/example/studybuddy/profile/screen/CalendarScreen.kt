@@ -79,7 +79,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
-import com.example.studybuddy.BuildConfig
 import com.example.studybuddy.CalendarViewModel
 import com.example.studybuddy.DurationOption
 import com.example.studybuddy.LocationType
@@ -105,6 +104,7 @@ import java.util.Locale
 import com.example.studybuddy.ui.StudyBuddyTopBar
 
 private const val TAG = "CalendarScreen"
+private const val GOOGLE_WEB_CLIENT_ID = "696935804947-fpk3jtrq13hb81qpl08psasatt4o8ssi.apps.googleusercontent.com"
 
 // Enums for variable Days of Week, include sun -> sat since calendar format
 private val daysOfWeek = listOf(
@@ -171,7 +171,7 @@ fun CalendarScreen(
     fun launchSignIn() {
         calendarViewModel.updateSigningIn(true)
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setServerClientId(BuildConfig.WEB_CLIENT_ID)
+            .setServerClientId(GOOGLE_WEB_CLIENT_ID)
             .setFilterByAuthorizedAccounts(false)
             .build()
         val request = GetCredentialRequest.Builder()
