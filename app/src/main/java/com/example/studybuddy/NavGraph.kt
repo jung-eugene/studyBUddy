@@ -57,13 +57,13 @@ fun StudyBuddyNavGraph(
             )
         }
 
-        // UN-MATCHED
-        composable(Routes.DeletedMatches.route) {
-            DeletedMatchesScreen(
-                navController = navController,
-                userVM = userVM
-            )
-        }
+//        // UN-MATCHED
+//        composable(Routes.DeletedMatches.route) {
+//            DeletedMatchesScreen(
+//                navController = navController,
+//                userVM = userVM
+//            )
+//        }
 
         // CALENDAR
         composable(Routes.Calendar.route) {

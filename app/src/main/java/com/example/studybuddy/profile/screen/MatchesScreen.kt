@@ -1,12 +1,15 @@
 package com.example.studybuddy.profile.screen
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +22,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
-import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.example.studybuddy.ui.StudyBuddyTopBar
@@ -33,15 +35,11 @@ fun MatchesScreen(
     val uiState by userVM.uiState.collectAsState()
     val currentUser = uiState.user
 
+    // Load matches for this user
     LaunchedEffect(currentUser?.id) {
-        val uidFromState = currentUser?.id
-        if (!uidFromState.isNullOrBlank()) {
-            userVM.loadMatches(uidFromState)
-        } else {
-            val authUid = FirebaseAuth.getInstance().currentUser?.uid
-            if (!authUid.isNullOrBlank()) {
-                userVM.loadMatches(authUid)
-            }
+        val uid = currentUser?.id ?: FirebaseAuth.getInstance().currentUser?.uid
+        if (!uid.isNullOrBlank()) {
+            userVM.loadMatches(uid)
         }
     }
 
@@ -55,9 +53,6 @@ fun MatchesScreen(
                 .padding(pad)
                 .fillMaxSize()
         ) {
-            DeletedMatchesButton(
-                onClick = { navController.navigate(Routes.DeletedMatches.route) }
-            )
 
             when {
                 uiState.isLoading -> {
@@ -66,7 +61,7 @@ fun MatchesScreen(
                     }
                 }
 
-                uiState.matches.isEmpty() -> {
+                uiState.matches.isEmpty() && uiState.deletedMatches.isEmpty() -> {
                     EmptyMatchesUI()
                 }
 
@@ -75,35 +70,61 @@ fun MatchesScreen(
                         modifier = Modifier
                             .padding(16.dp)
                             .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        items(
-                            items = uiState.matches,
-                            key = { it.user.id }
-                        ) { entry ->
-                            MatchCard(
-                                entry = entry,
-                                onUnmatch = { userVM.unmatchUser(entry.user.id) }
-                            )
+
+                        // ============================
+                        // ACTIVE MATCHES SECTION
+                        // ============================
+                        if (uiState.matches.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Current Matches",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+
+                            items(
+                                items = uiState.matches,
+                                key = { it.user.id }
+                            ) { entry ->
+                                MatchCard(
+                                    entry = entry,
+                                    onUnmatch = { userVM.unmatchUser(entry.user.id) }
+
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                        }
+
+                        // ============================
+                        // DELETED MATCHES SECTION
+                        // ============================
+                        if (uiState.deletedMatches.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Past Matches",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+
+                            items(
+                                items = uiState.deletedMatches,
+                                key = { it.user.id }
+                            ) { entry ->
+                                DeletedMatchCard(
+                                    entry = entry,
+                                    onRestore = { userVM.undoUnmatch(entry.user.id) }
+                                )
+                            }
                         }
                     }
                 }
             }
-
-        }
-    }
-}
-
-@Composable
-private fun DeletedMatchesButton(onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Button(onClick = onClick) {
-            Text("Deleted Matches")
         }
     }
 }
@@ -155,8 +176,18 @@ fun EmptyMatchesUI() {
 fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
     val user = entry.user
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             Modifier.padding(16.dp),
@@ -191,7 +222,7 @@ fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
                 } else if (entry.liked) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "You liked this user — waiting for a match",
+                        text = "You liked this user — waiting for a match.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
@@ -202,6 +233,55 @@ fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
 
             OutlinedButton(onClick = onUnmatch) {
                 Text("Unmatch")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeletedMatchCard(
+    entry: MatchEntry,
+    onRestore: () -> Unit
+) {
+    val user = entry.user
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.PersonOff,
+                    contentDescription = null,
+                    tint = Color(0xFFB71C1C),
+                    modifier = Modifier.size(52.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = user.name,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "${user.major} • ${user.year}",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(onClick = onRestore) {
+                    Text("Restore")
+                }
             }
         }
     }
