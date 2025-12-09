@@ -1,29 +1,29 @@
 package com.example.studybuddy.profile.screen
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.foundation.shape.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.example.studybuddy.ui.StudyBuddyTopBar
+import com.example.studybuddy.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,16 +33,13 @@ fun MatchesScreen(
 ) {
     val uiState by userVM.uiState.collectAsState()
     val currentUser = uiState.user
+    var selectedUserForPopup by remember { mutableStateOf<User?>(null) }
 
+    // Load matches for this user
     LaunchedEffect(currentUser?.id) {
-        val uidFromState = currentUser?.id
-        if (!uidFromState.isNullOrBlank()) {
-            userVM.loadMatches(uidFromState)
-        } else {
-            val authUid = FirebaseAuth.getInstance().currentUser?.uid
-            if (!authUid.isNullOrBlank()) {
-                userVM.loadMatches(authUid)
-            }
+        val uid = currentUser?.id ?: FirebaseAuth.getInstance().currentUser?.uid
+        if (!uid.isNullOrBlank()) {
+            userVM.loadMatches(uid)
         }
     }
 
@@ -56,26 +53,115 @@ fun MatchesScreen(
                 .padding(pad)
                 .fillMaxSize()
         ) {
-            if (uiState.isLoading) {
-                Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    CircularProgressIndicator()
+
+            when {
+                uiState.isLoading -> {
+                    Box(Modifier.fillMaxSize(), Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
                 }
-                return@Column
-            }
 
-            if (uiState.matches.isEmpty()) {
-                EmptyMatchesUI()
-                return@Column
-            }
+                uiState.matches.isEmpty() && uiState.deletedMatches.isEmpty() -> {
+                    EmptyMatchesUI()
+                }
 
-            LazyColumn(
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+
+                        // ============================
+                        // ACTIVE MATCHES SECTION
+                        // ============================
+                        if (uiState.matches.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Current Matches",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+
+                            items(
+                                items = uiState.matches,
+                                key = { it.user.id }
+                            ) { entry ->
+                                MatchCard(
+                                    entry = entry,
+                                    onUnmatch = { userVM.unmatchUser(entry.user.id) },
+                                    onClick = { selectedUserForPopup = entry.user }
+                                )
+                            }
+                            item { Spacer(modifier = Modifier.height(8.dp)) }
+                        }
+
+                        // ============================
+                        // DELETED MATCHES SECTION
+                        // ============================
+                        if (uiState.deletedMatches.isNotEmpty()) {
+                            item {
+                                Text(
+                                    "Past Matches",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color.Black
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                            }
+
+                            items(
+                                items = uiState.deletedMatches,
+                                key = { it.user.id }
+                            ) { entry ->
+                                DeletedMatchCard(
+                                    entry = entry,
+                                    onRestore = { userVM.undoUnmatch(entry.user.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // Popup showing user profile when clicked
+    if (selectedUserForPopup != null) {
+        Dialog(onDismissRequest = { selectedUserForPopup = null }) {
+
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = Color.LightGray,
                 modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .fillMaxWidth()
             ) {
-                items(uiState.matches) { entry ->
-                    MatchCard(entry)
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+
+                    // Main content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        UserCardCompact(selectedUserForPopup!!)
+                    }
+
+                    // Close button
+                    IconButton(
+                        onClick = { selectedUserForPopup = null },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
         }
@@ -126,11 +212,26 @@ fun EmptyMatchesUI() {
 }
 
 @Composable
-fun MatchCard(entry: MatchEntry) {
+fun MatchCard(
+    entry: MatchEntry,
+    onUnmatch: () -> Unit,
+    onClick: () -> Unit
+) {
     val user = entry.user
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(16.dp)
+            )
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Row(
             Modifier.padding(16.dp),
@@ -144,7 +245,7 @@ fun MatchCard(entry: MatchEntry) {
             )
             Spacer(Modifier.width(12.dp))
 
-            Column {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     user.name,
                     style = MaterialTheme.typography.titleMedium
@@ -165,10 +266,65 @@ fun MatchCard(entry: MatchEntry) {
                 } else if (entry.liked) {
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        text = "You liked this user — waiting for a match",
+                        text = "You liked this user — waiting for a match.",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
+                }
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            OutlinedButton(onClick = onUnmatch) {
+                Text("Unmatch")
+            }
+        }
+    }
+}
+
+@Composable
+private fun DeletedMatchCard(
+    entry: MatchEntry,
+    onRestore: () -> Unit
+) {
+    val user = entry.user
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = Color(0xFFE0E0E0),
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Outlined.PersonOff,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(52.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = user.name,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = "${user.major} • ${user.year}",
+                        color = Color.Gray,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Button(onClick = onRestore) {
+                    Text("Restore")
                 }
             }
         }

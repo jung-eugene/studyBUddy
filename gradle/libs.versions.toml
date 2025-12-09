@@ -19,6 +19,7 @@ googleServices = "4.4.4" # Plugin for Firebase services
 navigationCompose = "2.9.6" # For Jetpack Navigation
 kotlinxCoroutinesPlayServices = "1.10.2"
 firebaseAuth = "24.0.1"
+ui = "1.10.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -47,6 +48,7 @@ firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebaseAuth" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 
 
 [plugins]

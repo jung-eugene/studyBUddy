@@ -69,7 +69,8 @@ data class UserUiState(
     val user: User? = null,
     val darkMode: Boolean = false,
     val allUsers: List<User> = emptyList(),
-    val matches: List<MatchEntry> = emptyList()
+    val matches: List<MatchEntry> = emptyList(),
+    val deletedMatches: List<MatchEntry> = emptyList()
 )
 
 
@@ -268,6 +269,7 @@ class UserViewModel : ViewModel() {
             try {
                 setLoading(true)
                 setError(null)
+                val deletedIds = _uiState.value.deletedMatches.map { it.user.id }.toSet()
 
                 // 1) Get IDs of matched users (mutual) and liked users (one-sided)
                 val matchIds = matchRepo.getMatchIdsForUser(uid)
@@ -299,7 +301,7 @@ class UserViewModel : ViewModel() {
 
                 // 4) Update state
                 _uiState.value = _uiState.value.copy(
-                    matches = entries,
+                    matches = entries.filterNot { deletedIds.contains(it.user.id) },
                     isLoading = false
                 )
 
@@ -317,7 +319,8 @@ class UserViewModel : ViewModel() {
     fun addLocalLike(user: User) {
         val populated = user
         val existing = _uiState.value.matches.toMutableList()
-        if (existing.any { it.user.id == populated.id }) return
+        val deletedIds = _uiState.value.deletedMatches.map { it.user.id }
+        if (existing.any { it.user.id == populated.id } || deletedIds.contains(populated.id)) return
         existing.add(MatchEntry(user = populated, isMutual = false, liked = true))
         _uiState.value = _uiState.value.copy(matches = existing)
     }
@@ -328,6 +331,22 @@ class UserViewModel : ViewModel() {
             if (entry.user.id == userId) entry.copy(isMutual = true) else entry
         }
         _uiState.value = _uiState.value.copy(matches = updated)
+    }
+
+    fun unmatchUser(userId: String) {
+        val current = _uiState.value
+        val target = current.matches.firstOrNull { it.user.id == userId } ?: return
+        val remainingMatches = current.matches.filterNot { it.user.id == userId }
+        val newDeleted = (current.deletedMatches + target).distinctBy { it.user.id }
+        _uiState.value = current.copy(matches = remainingMatches, deletedMatches = newDeleted)
+    }
+
+    fun undoUnmatch(userId: String) {
+        val current = _uiState.value
+        val target = current.deletedMatches.firstOrNull { it.user.id == userId } ?: return
+        val remainingDeleted = current.deletedMatches.filterNot { it.user.id == userId }
+        val updatedMatches = (listOf(target) + current.matches).distinctBy { it.user.id }
+        _uiState.value = current.copy(matches = updatedMatches, deletedMatches = remainingDeleted)
     }
 
     suspend fun isProfileSetupComplete(uid: String): Boolean {
