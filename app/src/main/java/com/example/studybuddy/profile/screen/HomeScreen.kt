@@ -322,7 +322,7 @@ private fun SwipeableUserCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun UserCardCompact(user: User) {
+fun UserCardCompact(user: User) {
     val red = Color(0xFFD32F2F)
     val lightRed = Color(0xFFFFEBEE)
     val chipGreyBg = Color(0xFFF2F2F2)
@@ -400,6 +400,7 @@ private fun UserCardCompact(user: User) {
             if (user.courses.isNotEmpty()) {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     user.courses.forEach { course ->
                         Chip(
@@ -424,7 +425,10 @@ private fun UserCardCompact(user: User) {
                     Spacer(Modifier.width(8.dp))
                     Text("Study Preferences", style = MaterialTheme.typography.bodyMedium)
                 }
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     user.studyPreferences.forEach { pref ->
                         Chip(text = pref, bg = chipGreyBg, fg = chipGreyText)
                     }

@@ -1,30 +1,29 @@
 package com.example.studybuddy.profile.screen
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.outlined.ChatBubbleOutline
-import androidx.compose.material.icons.outlined.PersonOff
+import androidx.compose.foundation.shape.*
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.MatchEntry
 import com.example.studybuddy.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.example.studybuddy.ui.StudyBuddyTopBar
+import com.example.studybuddy.User
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +33,7 @@ fun MatchesScreen(
 ) {
     val uiState by userVM.uiState.collectAsState()
     val currentUser = uiState.user
+    var selectedUserForPopup by remember { mutableStateOf<User?>(null) }
 
     // Load matches for this user
     LaunchedEffect(currentUser?.id) {
@@ -92,8 +92,8 @@ fun MatchesScreen(
                             ) { entry ->
                                 MatchCard(
                                     entry = entry,
-                                    onUnmatch = { userVM.unmatchUser(entry.user.id) }
-
+                                    onUnmatch = { userVM.unmatchUser(entry.user.id) },
+                                    onClick = { selectedUserForPopup = entry.user }
                                 )
                             }
                             item { Spacer(modifier = Modifier.height(8.dp)) }
@@ -122,6 +122,45 @@ fun MatchesScreen(
                                 )
                             }
                         }
+                    }
+                }
+            }
+        }
+    }
+    // Popup showing user profile when clicked
+    if (selectedUserForPopup != null) {
+        Dialog(onDismissRequest = { selectedUserForPopup = null }) {
+
+            Surface(
+                shape = RoundedCornerShape(22.dp),
+                color = Color.LightGray,
+                modifier = Modifier
+                    .fillMaxWidth()
+            ) {
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+
+                    // Main content
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
+                        UserCardCompact(selectedUserForPopup!!)
+                    }
+
+                    // Close button
+                    IconButton(
+                        onClick = { selectedUserForPopup = null },
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                            .size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = Color.White
+                        )
                     }
                 }
             }
@@ -173,7 +212,11 @@ fun EmptyMatchesUI() {
 }
 
 @Composable
-fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
+fun MatchCard(
+    entry: MatchEntry,
+    onUnmatch: () -> Unit,
+    onClick: () -> Unit
+) {
     val user = entry.user
     Card(
         modifier = Modifier
@@ -182,7 +225,8 @@ fun MatchCard( entry: MatchEntry, onUnmatch: () -> Unit) {
                 width = 1.dp,
                 color = Color(0xFFE0E0E0),
                 shape = RoundedCornerShape(16.dp)
-            ),
+            )
+            .clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
@@ -263,7 +307,7 @@ private fun DeletedMatchCard(
                 Icon(
                     imageVector = Icons.Outlined.PersonOff,
                     contentDescription = null,
-                    tint = Color(0xFFB71C1C),
+                    tint = Color(0xFFD32F2F),
                     modifier = Modifier.size(52.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
