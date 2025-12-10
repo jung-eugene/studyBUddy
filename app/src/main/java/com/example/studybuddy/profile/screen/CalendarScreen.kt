@@ -104,7 +104,8 @@ import java.util.Locale
 import com.example.studybuddy.ui.StudyBuddyTopBar
 
 private const val TAG = "CalendarScreen"
-private const val GOOGLE_WEB_CLIENT_ID = "696935804947-fpk3jtrq13hb81qpl08psasatt4o8ssi.apps.googleusercontent.com"
+// OAuth web client ID from the current Firebase/Google Cloud project (matches google-services.json)
+private const val GOOGLE_WEB_CLIENT_ID = "275610785003-tlgs2ht9s9ks022r1lgmr3k0eebpmuou.apps.googleusercontent.com"
 
 // Enums for variable Days of Week, include sun -> sat since calendar format
 private val daysOfWeek = listOf(
