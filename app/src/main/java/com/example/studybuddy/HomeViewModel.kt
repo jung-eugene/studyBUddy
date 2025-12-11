@@ -9,6 +9,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 private const val TAG_HOME = "HomeViewModel"
+private const val WEIGHT_MAJOR = 6
+private const val WEIGHT_COURSE = 4   // per shared course
+private const val WEIGHT_YEAR = 3
+private const val WEIGHT_AVAILABILITY = 2
 
 data class HomeUiState(
     val candidates: List<User> = emptyList(),
@@ -43,8 +47,6 @@ class HomeViewModel(
             // Save current user for filtering
             currentUser = allUsers.find { it.id == uid }
 
-            val myCourses = currentUser?.courses?.toSet() ?: emptySet()
-
             // Fetch ids to exclude: already liked + already matched + self
             val likedIds = uid?.let { matchRepo.getLikedIdsForUser(it) } ?: emptyList()
             val matchedIds = uid?.let { matchRepo.getMatchIdsForUser(it) } ?: emptyList()
@@ -54,18 +56,18 @@ class HomeViewModel(
                 Log.w(TAG_HOME, "currentUser not found (currentUid=$uid). Using fallback filtering.")
             }
 
-            val filtered = if (uid != null) {
-                if (currentUser == null) {
-                    // Fallback: exclude only the excluded ids, do not require shared courses
-                    allUsers.filter { it.id !in excluded }
-                } else {
-                    allUsers.filter { user ->
-                        user.id !in excluded &&
-                                user.courses.any { it in myCourses }
-                    }
+            val base = allUsers.filter { it.id !in excluded }
+
+            val filtered = if (uid != null && currentUser != null) {
+                // Prefer users with same/overlapping major OR at least one shared class.
+                val strongMatches = base.filter { user ->
+                    hasMajorMatch(user, currentUser!!) ||
+                            sharedCourseCount(user, currentUser!!) > 0
                 }
+                val pool = strongMatches.ifEmpty { base }
+                pool.sortedByDescending { candidateScore(it, currentUser!!) }
             } else {
-                allUsers.filter { it.id !in excluded }
+                base
             }
 
             Log.i(TAG_HOME, "Filtered to ${filtered.size} users (after excluding liked/matched/self)")
@@ -153,5 +155,47 @@ class HomeViewModel(
         _uiState.value = state.copy(
             currentIndex = nextIndex
         )
+    }
+
+    private fun candidateScore(user: User, current: User): Int {
+        var score = 0
+        val majorMatch = hasMajorMatch(user, current)
+        val sharedCourses = sharedCourseCount(user, current)
+        if (majorMatch) score += WEIGHT_MAJOR
+        score += sharedCourses * WEIGHT_COURSE
+        if (user.year.equals(current.year, ignoreCase = true)) score += WEIGHT_YEAR
+        score += availabilityOverlap(user.availability, current.availability) * WEIGHT_AVAILABILITY
+        return score
+    }
+
+    private fun hasMajorMatch(user: User, current: User): Boolean {
+        val majorA = user.major.normalizeForMatch()
+        val majorB = current.major.normalizeForMatch()
+        if (majorA.isEmpty() || majorB.isEmpty()) return false
+        return majorA.contains(majorB) || majorB.contains(majorA)
+    }
+
+    private fun sharedCourseCount(user: User, current: User): Int {
+        val theirs = user.courses.mapNotNull { it.normalizeForMatch().takeIf { it.isNotEmpty() } }
+        val mine = current.courses.mapNotNull { it.normalizeForMatch().takeIf { it.isNotEmpty() } }
+        if (theirs.isEmpty() || mine.isEmpty()) return 0
+
+        var count = 0
+        for (course in theirs) {
+            if (mine.any { course.contains(it) || it.contains(course) }) {
+                count++
+            }
+        }
+        return count
+    }
+
+    private fun String.normalizeForMatch(): String =
+        this.lowercase().replace(Regex("[^a-z0-9]"), "")
+
+    private fun availabilityOverlap(a: String, b: String): Int {
+        if (a.isBlank() || b.isBlank()) return 0
+        val setA = a.split(",").mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }.toSet()
+        val setB = b.split(",").mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }.toSet()
+        return setA.intersect(setB).size
     }
 }
