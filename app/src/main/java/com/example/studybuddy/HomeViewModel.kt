@@ -169,10 +169,10 @@ class HomeViewModel(
     }
 
     private fun hasMajorMatch(user: User, current: User): Boolean {
-        val majorsA = user.normalizedMajors()
-        val majorsB = current.normalizedMajors()
-        if (majorsA.isEmpty() || majorsB.isEmpty()) return false
-        return majorsA.any { a -> majorsB.any { b -> a.contains(b) || b.contains(a) } }
+        val majorA = user.major.normalizeForMatch()
+        val majorB = current.major.normalizeForMatch()
+        if (majorA.isEmpty() || majorB.isEmpty()) return false
+        return majorA.contains(majorB) || majorB.contains(majorA)
     }
 
     private fun sharedCourseCount(user: User, current: User): Int {
@@ -191,9 +191,6 @@ class HomeViewModel(
 
     private fun String.normalizeForMatch(): String =
         this.lowercase().replace(Regex("[^a-z0-9]"), "")
-
-    private fun User.normalizedMajors(): List<String> =
-        majorList().mapNotNull { it.normalizeForMatch().takeIf { norm -> norm.isNotEmpty() } }
 
     private fun availabilityOverlap(a: String, b: String): Int {
         if (a.isBlank() || b.isBlank()) return 0

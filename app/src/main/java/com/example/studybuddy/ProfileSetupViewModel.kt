@@ -16,7 +16,7 @@ import kotlinx.coroutines.tasks.await
 // ------------------------------
 data class ProfileSetupState(
     val name: String = "",
-    val majors: List<String> = emptyList(),
+    val major: String = "",
     val year: String = "",
     val courses: List<String> = emptyList(),
     val availability: List<String> = emptyList(),
@@ -43,10 +43,9 @@ class ProfileSetupViewModel : ViewModel() {
         Log.d(TAG, "updateName: $v")
         _state.update { it.copy(name = v) }
     }
-    fun setMajors(values: List<String>) {
-        val cleaned = values.distinct().take(MAX_MAJOR_SELECTIONS)
-        Log.d(TAG, "setMajors: $cleaned")
-        _state.update { it.copy(majors = cleaned) }
+    fun updateMajor(v: String) {
+        Log.d(TAG, "updateMajor: $v")
+        _state.update { it.copy(major = v) }
     }
 
     fun updateYear(v: String) {
@@ -93,8 +92,7 @@ class ProfileSetupViewModel : ViewModel() {
         val user = User(
             id = uid,
             name = profile.name,
-            majors = profile.majors,
-            major = profile.majors.firstOrNull() ?: "", // keep legacy field populated
+            major = profile.major,
             year = profile.year,
             courses = profile.courses,
             availability = profile.availability.joinToString(", "),

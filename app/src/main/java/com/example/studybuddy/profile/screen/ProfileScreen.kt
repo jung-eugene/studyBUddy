@@ -33,7 +33,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.studybuddy.ui.StudyBuddyTopBar
-import com.example.studybuddy.displayMajors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -131,7 +130,6 @@ fun ProfileScreen(
             Spacer(Modifier.height(12.dp))
 
             // Name and Major
-            val majors = user.displayMajors().ifBlank { "Major not set" }
             Text(
                 text = user.name.ifBlank { "Unnamed User" },
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -141,7 +139,7 @@ fun ProfileScreen(
             Spacer(Modifier.height(4.dp))
 
             Text(
-                "$majors • ${user.year}",
+                "${user.major} • ${user.year}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = color.onSurfaceVariant
             )

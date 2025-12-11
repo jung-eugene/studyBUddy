@@ -45,7 +45,6 @@ data class User(
     val studyPreferences: List<String> = emptyList(),
     val id: String = "",
     val name: String = "",
-    val majors: List<String> = emptyList(), // preferred multi-major field
     val major: String = "",
     val year: String = "",
     val courses: List<String> = emptyList(),
@@ -56,15 +55,6 @@ data class User(
     val darkMode: Boolean = false,
     val profileSetupComplete: Boolean = false // flag to track if setup done
 )
-
-// Derived helpers to keep old single-major data working while supporting multi-major users.
-fun User.majorList(): List<String> =
-    if (majors.isNotEmpty()) majors else listOfNotNull(major.takeIf { it.isNotBlank() })
-
-fun User.primaryMajor(): String = majorList().firstOrNull().orEmpty()
-
-fun User.displayMajors(separator: String = " • "): String =
-    majorList().joinToString(separator)
 
 // UI STATE FOR THE USER VM
 data class MatchEntry(
