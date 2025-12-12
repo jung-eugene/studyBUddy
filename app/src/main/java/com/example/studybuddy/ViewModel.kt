@@ -15,6 +15,7 @@ import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -68,7 +69,10 @@ data class User(
     val photoUrl: String = "",
     val email: String = "",
     val darkMode: Boolean = false,
-    val profileSetupComplete: Boolean = false // flag to track if setup done
+    val profileSetupComplete: Boolean = false, // flag to track if setup done
+    val streakCount: Int = 0,
+    val bestStreak: Int = 0,
+    val lastStreakDate: String = "" // date of last daily check-in
 )
 
 // UI STATE FOR THE USER VM
@@ -261,6 +265,52 @@ class UserViewModel : ViewModel() {
                 _uiState.value = _uiState.value.copy(darkMode = enabled)
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating darkMode for $uid", e)
+                setError(e.message)
+            }
+        }
+    }
+
+    // DAILY STREAK CHECK-IN
+    fun checkInToday(uid: String) {
+        val currentUser = _uiState.value.user ?: return
+        viewModelScope.launch {
+            try {
+                val today = LocalDate.now(ZoneId.systemDefault())
+                val lastDateStr = currentUser.lastStreakDate
+                val lastDate = lastDateStr.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
+
+                // Already checked in today
+                if (lastDate != null && lastDate.isEqual(today)) {
+                    return@launch
+                }
+
+                val yesterday = today.minusDays(1)
+                val newStreak = when {
+                    lastDate == null -> 1
+                    lastDate.isEqual(yesterday) -> (currentUser?.streakCount ?: 0) + 1
+                    else -> 1
+                }
+                val best = maxOf(currentUser?.bestStreak ?: 0, newStreak)
+
+                val updates = mapOf(
+                    "streakCount" to newStreak,
+                    "bestStreak" to best,
+                    "lastStreakDate" to today.toString()
+                )
+
+                db.collection("users").document(uid)
+                    .set(updates, SetOptions.merge())
+                    .await()
+
+                val updatedUser = currentUser?.copy(
+                    streakCount = newStreak,
+                    bestStreak = best,
+                    lastStreakDate = today.toString()
+                )
+                _uiState.value = _uiState.value.copy(user = updatedUser)
+                Log.i(TAG, "Check-in recorded for $uid, streak=$newStreak best=$best")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error recording check-in for $uid", e)
                 setError(e.message)
             }
         }
