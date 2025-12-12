@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.example.studybuddy.ui.StudyBuddyTopBar
+import java.time.LocalDate
+import java.time.ZoneId
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -190,6 +192,39 @@ fun ProfileScreen(
                         user.availabilitySlots.joinToString(", ") { it.label() },
                         color = color.onBackground,
                         style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            // STREAKS
+            val today = remember { LocalDate.now(ZoneId.systemDefault()) }
+            val alreadyCheckedIn = user.lastStreakDate == today.toString()
+            SectionCard(title = "Streaks", icon = Icons.Default.Whatshot) {
+                Text(
+                    "Current streak: ${user.streakCount} day${if (user.streakCount == 1) "" else "s"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = color.onBackground
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Best streak: ${user.bestStreak} day${if (user.bestStreak == 1) "" else "s"}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = color.onSurfaceVariant
+                )
+                Spacer(Modifier.height(12.dp))
+                Button(
+                    onClick = { userVM.checkInToday(uid) },
+                    enabled = !alreadyCheckedIn,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = color.primary,
+                        disabledContainerColor = color.onSurface.copy(alpha = 0.08f)
+                    )
+                ) {
+                    Text(
+                        if (alreadyCheckedIn) "Checked in today" else "Check in for today",
+                        color = if (alreadyCheckedIn) color.onSurface else color.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

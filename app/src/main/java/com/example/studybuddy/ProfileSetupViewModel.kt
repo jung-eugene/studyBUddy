@@ -102,7 +102,10 @@ class ProfileSetupViewModel : ViewModel() {
             bio = profile.bio,
             photoUrl = "",
             darkMode = false,
-            profileSetupComplete = true
+            profileSetupComplete = true,
+            streakCount = 0,
+            bestStreak = 0,
+            lastStreakDate = ""
         )
 
         viewModelScope.launch {
