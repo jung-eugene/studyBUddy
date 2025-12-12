@@ -85,12 +85,14 @@ class ProfileSetupViewModel : ViewModel() {
     // Create Firestore User document
     // --------------------------
     fun completeProfile() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val uid = firebaseUser?.uid ?: return
         Log.i(TAG, "Saving complete profile for $uid")
         val profile = _state.value
 
         val user = User(
             id = uid,
+            email = firebaseUser.email.orEmpty(),
             name = profile.name,
             major = profile.major,
             year = profile.year,

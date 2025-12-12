@@ -174,13 +174,27 @@ class UserViewModel : ViewModel() {
             setLoading(true)
             setError(null)
             try {
+                val authEmail = FirebaseAuth.getInstance().currentUser?.email.orEmpty()
                 val doc = db.collection("users").document(uid).get().await()
-                val user = doc.toObject(User::class.java)
-                Log.i(TAG, "Profile loaded for $uid: ${user?.name}")
+                val loadedUser = doc.toObject(User::class.java)
+
+                val patchedUser = if (loadedUser != null && loadedUser.email.isBlank() && authEmail.isNotBlank()) {
+                    try {
+                        db.collection("users").document(uid)
+                            .update("email", authEmail)
+                            .await()
+                        Log.d(TAG, "Backfilled email for $uid")
+                    } catch (updateError: Exception) {
+                        Log.w(TAG, "Failed to backfill email for $uid", updateError)
+                    }
+                    loadedUser.copy(email = authEmail)
+                } else loadedUser
+
+                Log.i(TAG, "Profile loaded for $uid: ${patchedUser?.name}")
 
                 _uiState.value = _uiState.value.copy(
-                    user = user,
-                    darkMode = user?.darkMode ?: false,
+                    user = patchedUser,
+                    darkMode = patchedUser?.darkMode ?: false,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -198,14 +212,19 @@ class UserViewModel : ViewModel() {
             setLoading(true)
             setError(null)
             try {
+                val authEmail = FirebaseAuth.getInstance().currentUser?.email
+                val userToSave = if (updatedUser.email.isBlank() && !authEmail.isNullOrBlank()) {
+                    updatedUser.copy(email = authEmail)
+                } else updatedUser
+
                 db.collection("users").document(uid)
-                    .set(updatedUser)
+                    .set(userToSave)
                     .await()
 
                 Log.i(TAG, "Profile saved for $uid")
 
                 _uiState.value = _uiState.value.copy(
-                    user = updatedUser,
+                    user = userToSave,
                     isLoading = false
                 )
             } catch (e: Exception) {
