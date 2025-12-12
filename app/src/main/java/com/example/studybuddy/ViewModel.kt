@@ -15,7 +15,6 @@ import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +39,10 @@ import java.time.format.DateTimeFormatter
 
 // Manages Firebase user data, like fetching all users info, updating user profile completion
 
+data class AvailabilitySlot( val day: String = "", val timeOfDay: String = "") {
+    fun label(): String = listOf(day, timeOfDay).filter { it.isNotBlank() }.joinToString(" ")
+}
+
 // USER DATA CLASS
 data class User(
     val studyPreferences: List<String> = emptyList(),
@@ -48,7 +51,7 @@ data class User(
     val major: String = "",
     val year: String = "",
     val courses: List<String> = emptyList(),
-    val availability: String = "",
+    val availabilitySlots: List<AvailabilitySlot> = emptyList(),
     val bio: String = "",
     val photoUrl: String = "",
     val email: String = "",
@@ -185,7 +188,7 @@ class UserViewModel : ViewModel() {
             setError(null)
             try {
                 db.collection("users").document(uid)
-                    .set(updatedUser, SetOptions.merge())
+                    .set(updatedUser)
                     .await()
 
                 Log.i(TAG, "Profile saved for $uid")
@@ -235,8 +238,7 @@ class UserViewModel : ViewModel() {
                 // Parse documents into User objects and ensure `id` is set.
                 // Keep any `id` that already exists in the document; otherwise fall back to the Firestore doc id.
                 val users = snapshot.documents.mapNotNull { doc ->
-                    val u = doc.toObject(User::class.java)
-                    if (u == null) return@mapNotNull null
+                    val u = doc.toObject(User::class.java) ?: return@mapNotNull null
                     if (u.id.isBlank()) u.copy(id = doc.id) else u
                 }
 

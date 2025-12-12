@@ -435,20 +435,19 @@ fun UserCardCompact(user: User) {
                 }
             }
 
-            if (user.availability.isNotBlank()) {
+            if (user.availabilitySlots.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Filled.AccessTime, contentDescription = null, tint = Color(0xFF6B6B6B))
                     Spacer(Modifier.width(8.dp))
                     Text("Availability", style = MaterialTheme.typography.bodyMedium)
                 }
-                val slots = user.availability.split(",")
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    slots.forEach {
-                        Chip(text = it.trim(), bg = chipGreyBg, fg = chipGreyText)
+                    user.availabilitySlots.forEach { slot ->
+                        Chip(text = slot.label(), bg = chipGreyBg, fg = chipGreyText)
                     }
                 }
             }

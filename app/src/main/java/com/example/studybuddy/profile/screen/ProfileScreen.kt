@@ -184,9 +184,10 @@ fun ProfileScreen(
             }
 
             // AVAILABILITY with icon
-            if (user.availability.isNotBlank()) {
+            if (user.availabilitySlots.isNotEmpty()) {
                 SectionCard(title = "Availability", icon = Icons.Default.AccessTime) {
-                    Text(user.availability,
+                    Text(
+                        user.availabilitySlots.joinToString(", ") { it.label() },
                         color = color.onBackground,
                         style = MaterialTheme.typography.bodyMedium)
                 }
