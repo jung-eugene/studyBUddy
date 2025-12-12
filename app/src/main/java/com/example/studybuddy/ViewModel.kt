@@ -22,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 import org.json.JSONObject
+import org.json.JSONArray
 import java.io.BufferedReader
 import java.io.InputStream
 import java.io.OutputStreamWriter
@@ -468,6 +469,7 @@ class CalendarViewModel : ViewModel() {
                 end = event.end,
                 description = event.description,
                 location = event.location,
+                attendeeEmail = event.attendeeEmail,
                 onSuccess = {
                     pendingEvent = null
                     creationStatus = "Session synced to Google Calendar"
@@ -507,7 +509,8 @@ data class PendingEvent(
     val start: ZonedDateTime,
     val end: ZonedDateTime,
     val description: String?,
-    val location: String?
+    val location: String?,
+    val attendeeEmail: String? = null
 )
 
 data class StudySession(
@@ -559,6 +562,7 @@ private suspend fun performCalendarCreate(
     end: ZonedDateTime,
     description: String?,
     location: String?,
+    attendeeEmail: String?,
     onSuccess: (String) -> Unit,
     onFailure: (String) -> Unit,
     onRecover: (Intent?) -> Unit
@@ -575,7 +579,8 @@ private suspend fun performCalendarCreate(
             description = description,
             location = location,
             start = start,
-            end = end
+            end = end,
+            attendeeEmail = attendeeEmail
         )
         result.onSuccess(onSuccess).onFailure { onFailure("Error: ${it.message}") }
     } catch (e: UserRecoverableAuthException) {
@@ -598,7 +603,8 @@ private suspend fun createGoogleCalendarEvent(
     location: String? = null,
     start: ZonedDateTime,
     end: ZonedDateTime,
-    timeZoneId: String = ZoneId.systemDefault().id
+    timeZoneId: String = ZoneId.systemDefault().id,
+    attendeeEmail: String? = null
 ): Result<String> = withContext(Dispatchers.IO) {
     try {
         val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -616,6 +622,14 @@ private suspend fun createGoogleCalendarEvent(
             location?.let { put("location", it) }
             put("start", startJson)
             put("end", endJson)
+            attendeeEmail
+                ?.takeIf { it.isNotBlank() }
+                ?.let { email ->
+                    val attendee = JSONObject()
+                    attendee.put("email", email)
+                    attendee.put("responseStatus", "accepted")
+                    put("attendees", JSONArray().apply { put(attendee) })
+                }
         }
 
         val url = URL("https://www.googleapis.com/calendar/v3/calendars/primary/events")

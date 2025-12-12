@@ -53,7 +53,8 @@ fun StudyBuddyNavGraph(
         composable(Routes.Matches.route) {
             MatchesScreen(
                 navController = navController,
-                userVM = userVM
+                userVM = userVM,
+                calendarVM = calendarVM
             )
         }
 

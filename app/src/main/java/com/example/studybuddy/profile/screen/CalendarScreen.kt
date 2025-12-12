@@ -6,8 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -37,7 +35,6 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -143,7 +140,6 @@ fun CalendarScreen(
     * Compose-level scoped references used throughout the screen for context + coroutine helpers.
     */
     val context = LocalContext.current
-    val today = remember { LocalDate.now() }
     val credentialManager: CredentialManager = remember(context) { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
 
@@ -153,18 +149,7 @@ fun CalendarScreen(
     val signingIn: Boolean = calendarViewModel.signingIn
     val currentMonth: YearMonth = calendarViewModel.currentMonth
     val selectedDate: LocalDate = calendarViewModel.selectedDate
-    val creationStatus: String? = calendarViewModel.creationStatus
     val sessions: SnapshotStateList<StudySession> = calendarViewModel.sessions
-
-    var showScheduleDialog by remember { mutableStateOf(false) }
-    var showSignInDialog by remember { mutableStateOf(false) }
-
-    // Launcher used when Google Calendar API asks us to resolve auth scopes interactively.
-    val recoverAuthLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        calendarViewModel.retryPendingEvent(context)
-    }
 
     /*
     * Entrypoint for the Google Identity flow. Requests a Google ID token so we can
@@ -222,12 +207,6 @@ fun CalendarScreen(
         }
     }
 
-    LaunchedEffect(showSignInDialog, signedInAccount) {
-        if (showSignInDialog && signedInAccount != null) {
-            showSignInDialog = false
-            showScheduleDialog = true
-        }
-    }
     /*
     * actual ui for the user in calendar screen
     */
@@ -263,66 +242,7 @@ fun CalendarScreen(
                 sessions = sessions.filter { it.date == selectedDate }
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = {
-                    if (signedInAccount == null) {
-                        showSignInDialog = true
-                    } else {
-                        showScheduleDialog = true
-                    }
-                }
-            ) {
-                Icon(imageVector = Icons.Default.Schedule, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Schedule Study Session")
-            }
-
-            creationStatus?.let { status ->
-                Text(
-                    text = status,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
-    }
-
-    if (showSignInDialog) {
-        SignInPromptDialog(
-            signingIn = signingIn,
-            onDismiss = { showSignInDialog = false },
-            onSignIn = { launchSignIn() }
-        )
-    }
-
-    if (showScheduleDialog) {
-        val availableDate = if (selectedDate.isBefore(today)) today else selectedDate
-        ScheduleSessionDialog(
-            initialDate = availableDate,
-            onDismiss = { showScheduleDialog = false },
-            onSessionCreated = { newSession ->
-                calendarViewModel.addSession(newSession)
-                signedInAccount?.let { account ->
-                    calendarViewModel.syncSessionToCalendar(
-                        context = context,
-                        event = PendingEvent(
-                            account = account,
-                            title = newSession.course,
-                            start = newSession.startDateTime(),
-                            end = newSession.endDateTime(),
-                            description = buildSessionDescription(newSession),
-                            location = newSession.location.takeIf { it.isNotBlank() }
-                        ),
-                        requestAuth = { intent ->
-                            intent?.let { recoverAuthLauncher.launch(it) }
-                        }
-                    )
-                }
-                showScheduleDialog = false
-            }
-        )
     }
 }
 @Composable
@@ -761,7 +681,7 @@ private fun ScheduleSessionDialog(
                     )
                     Box(
                         modifier = Modifier
-                            .matchParentSize()
+                            .fillMaxSize()
                             .clickable(
                                 interactionSource = timeTapSource,
                                 indication = null
@@ -789,7 +709,7 @@ private fun ScheduleSessionDialog(
                     )
                     Box(
                         modifier = Modifier
-                            .matchParentSize()
+                            .fillMaxSize()
                             .clickable(
                                 interactionSource = durationTapSource,
                                 indication = null
