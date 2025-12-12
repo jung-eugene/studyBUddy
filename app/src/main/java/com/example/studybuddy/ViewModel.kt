@@ -287,10 +287,10 @@ class UserViewModel : ViewModel() {
                 val yesterday = today.minusDays(1)
                 val newStreak = when {
                     lastDate == null -> 1
-                    lastDate.isEqual(yesterday) -> (currentUser?.streakCount ?: 0) + 1
+                    lastDate.isEqual(yesterday) -> currentUser.streakCount + 1
                     else -> 1
                 }
-                val best = maxOf(currentUser?.bestStreak ?: 0, newStreak)
+                val best = maxOf(currentUser.bestStreak, newStreak)
 
                 val updates = mapOf(
                     "streakCount" to newStreak,
@@ -302,7 +302,7 @@ class UserViewModel : ViewModel() {
                     .set(updates, SetOptions.merge())
                     .await()
 
-                val updatedUser = currentUser?.copy(
+                val updatedUser = currentUser.copy(
                     streakCount = newStreak,
                     bestStreak = best,
                     lastStreakDate = today.toString()
