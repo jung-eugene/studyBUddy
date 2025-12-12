@@ -83,9 +83,15 @@ data class UserUiState(
 class AuthViewModel : ViewModel() {
     private val TAG = "AuthVM"
     private val auth = FirebaseAuth.getInstance()
+    private fun isBuEmail(email: String) = email.trim().lowercase().endsWith("@bu.edu")
 
     // --- LOGIN ---
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
+        if (!isBuEmail(email)) {
+            Log.w(TAG, "Login blocked for non-BU email: $email")
+            onResult(false)
+            return
+        }
         Log.d(TAG, "Attempt login with $email")
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener {
@@ -100,6 +106,11 @@ class AuthViewModel : ViewModel() {
 
     // --- SIGN UP ---
     fun signup(email: String, password: String, onResult: (Boolean) -> Unit) {
+        if (!isBuEmail(email)) {
+            Log.w(TAG, "Signup blocked for non-BU email: $email")
+            onResult(false)
+            return
+        }
         Log.d(TAG, "Attempt signup with $email")
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
