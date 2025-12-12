@@ -549,7 +549,11 @@ fun AvailabilityEditor(
 
         Button(
             onClick = {
-                val slot = AvailabilitySlot(day = selectedDay, timeOfDay = selectedTime)
+                val slot = AvailabilitySlot(
+                    day = selectedDay,
+                    timeOfDay = selectedTime,
+                    meetTimes = listOf(selectedTime)
+                )
                 onToggle(slot)
                 selectedDay = ""
                 selectedTime = ""

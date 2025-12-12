@@ -344,7 +344,11 @@ fun Step3Content(
         Button(
             onClick = {
                 if (selectedDay.isNotBlank() && selectedTime.isNotBlank()) {
-                    val slot = AvailabilitySlot(day = selectedDay, timeOfDay = selectedTime)
+                    val slot = AvailabilitySlot(
+                        day = selectedDay,
+                        timeOfDay = selectedTime,
+                        meetTimes = listOf(selectedTime)
+                    )
                     setupVM.toggleAvailability(slot)
                     selectedDay = ""
                     selectedTime = ""

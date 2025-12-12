@@ -39,8 +39,19 @@ import java.time.format.DateTimeFormatter
 
 // Manages Firebase user data, like fetching all users info, updating user profile completion
 
-data class AvailabilitySlot( val day: String = "", val timeOfDay: String = "") {
-    fun label(): String = listOf(day, timeOfDay).filter { it.isNotBlank() }.joinToString(" ")
+data class AvailabilitySlot(
+    val day: String = "",
+    val timeOfDay: String = "",
+    val meetTimes: List<String> = emptyList()
+) {
+    fun label(): String {
+        val timeLabel = when {
+            meetTimes.isNotEmpty() -> meetTimes.joinToString(" / ")
+            timeOfDay.isNotBlank() -> timeOfDay
+            else -> ""
+        }
+        return listOf(day, timeLabel).filter { it.isNotBlank() }.joinToString(" ")
+    }
 }
 
 // USER DATA CLASS

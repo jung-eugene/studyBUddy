@@ -13,6 +13,7 @@ private const val WEIGHT_MAJOR = 6
 private const val WEIGHT_COURSE = 4   // per shared course
 private const val WEIGHT_YEAR = 3
 private const val WEIGHT_AVAILABILITY = 2
+private const val WEIGHT_MEET_TIME = 1   // intentionally light
 
 data class HomeUiState(
     val candidates: List<User> = emptyList(),
@@ -164,7 +165,14 @@ class HomeViewModel(
         if (majorMatch) score += WEIGHT_MAJOR
         score += sharedCourses * WEIGHT_COURSE
         if (user.year.equals(current.year, ignoreCase = true)) score += WEIGHT_YEAR
-        score += availabilityOverlap(user.availabilitySlots, current.availabilitySlots) * WEIGHT_AVAILABILITY
+        val availabilityScore = availabilityOverlap(user.availabilitySlots, current.availabilitySlots)
+        if (availabilityScore > 0) {
+            score += availabilityScore * WEIGHT_AVAILABILITY
+        }
+        val meetTimeScore = meetTimeOverlap(user.availabilitySlots, current.availabilitySlots)
+        if (meetTimeScore > 0) {
+            score += meetTimeScore * WEIGHT_MEET_TIME
+        }
         return score
     }
 
@@ -194,15 +202,33 @@ class HomeViewModel(
 
     private fun availabilityOverlap(a: List<AvailabilitySlot>, b: List<AvailabilitySlot>): Int {
         if (a.isEmpty() || b.isEmpty()) return 0
-        val setA = a.mapNotNull { it.normalized() }.toSet()
-        val setB = b.mapNotNull { it.normalized() }.toSet()
+        val setA = a.flatMap { it.normalizedSlots() }.toSet()
+        val setB = b.flatMap { it.normalizedSlots() }.toSet()
         return setA.intersect(setB).size
     }
 
-    private fun AvailabilitySlot.normalized(): String? {
+    private fun meetTimeOverlap(a: List<AvailabilitySlot>, b: List<AvailabilitySlot>): Int {
+        if (a.isEmpty() || b.isEmpty()) return 0
+        val timesA = a.flatMap { it.normalizedTimes() }.toSet()
+        val timesB = b.flatMap { it.normalizedTimes() }.toSet()
+        return timesA.intersect(timesB).size
+    }
+
+    private fun AvailabilitySlot.normalizedSlots(): List<String> {
         val dayNorm = day.trim().lowercase()
-        val timeNorm = timeOfDay.trim().lowercase()
-        if (dayNorm.isEmpty() || timeNorm.isEmpty()) return null
-        return "$dayNorm|$timeNorm"
+        if (dayNorm.isEmpty()) return emptyList()
+        val times = resolvedTimes()
+        if (times.isEmpty()) return emptyList()
+        return times.map { "$dayNorm|$it" }
+    }
+
+    private fun AvailabilitySlot.normalizedTimes(): List<String> = resolvedTimes()
+
+    private fun AvailabilitySlot.resolvedTimes(): List<String> {
+        val fromArray = meetTimes.mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }
+        if (fromArray.isNotEmpty()) return fromArray
+        return timeOfDay
+            .split(",")
+            .mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }
     }
 }
