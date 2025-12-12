@@ -218,6 +218,8 @@ fun MatchCard(
     onClick: () -> Unit
 ) {
     val user = entry.user
+    val mutual = entry.isMutual
+    val liked = entry.liked
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -256,20 +258,58 @@ fun MatchCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
 
-                if (entry.isMutual) {
+                Spacer(Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (mutual) {
+                        AssistChip(
+                            onClick = {},
+                            shape = RoundedCornerShape(50),
+                            label = { Text("Mutual match") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = null
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                labelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        )
+                    } else if (liked) {
+                        AssistChip(
+                            onClick = {},
+                            shape = RoundedCornerShape(50),
+                            label = { Text("Waiting for match") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Outlined.HourglassTop,
+                                    contentDescription = null
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                labelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        )
+                    }
+                }
+
+
+                if (mutual) {
                     Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = user.email.ifBlank { "Email not set" },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF2E7D32)
-                    )
-                } else if (entry.liked) {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        text = "You liked this user — waiting for a match.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Icon(
+                            imageVector = Icons.Outlined.Email,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = user.email.ifBlank { "Email not set" },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
             }
 
