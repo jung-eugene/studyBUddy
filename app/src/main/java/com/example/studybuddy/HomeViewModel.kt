@@ -164,7 +164,7 @@ class HomeViewModel(
         if (majorMatch) score += WEIGHT_MAJOR
         score += sharedCourses * WEIGHT_COURSE
         if (user.year.equals(current.year, ignoreCase = true)) score += WEIGHT_YEAR
-        score += availabilityOverlap(user.availability, current.availability) * WEIGHT_AVAILABILITY
+        score += availabilityOverlap(user.availabilitySlots, current.availabilitySlots) * WEIGHT_AVAILABILITY
         return score
     }
 
@@ -192,10 +192,17 @@ class HomeViewModel(
     private fun String.normalizeForMatch(): String =
         this.lowercase().replace(Regex("[^a-z0-9]"), "")
 
-    private fun availabilityOverlap(a: String, b: String): Int {
-        if (a.isBlank() || b.isBlank()) return 0
-        val setA = a.split(",").mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }.toSet()
-        val setB = b.split(",").mapNotNull { it.trim().lowercase().takeIf { it.isNotEmpty() } }.toSet()
+    private fun availabilityOverlap(a: List<AvailabilitySlot>, b: List<AvailabilitySlot>): Int {
+        if (a.isEmpty() || b.isEmpty()) return 0
+        val setA = a.mapNotNull { it.normalized() }.toSet()
+        val setB = b.mapNotNull { it.normalized() }.toSet()
         return setA.intersect(setB).size
+    }
+
+    private fun AvailabilitySlot.normalized(): String? {
+        val dayNorm = day.trim().lowercase()
+        val timeNorm = timeOfDay.trim().lowercase()
+        if (dayNorm.isEmpty() || timeNorm.isEmpty()) return null
+        return "$dayNorm|$timeNorm"
     }
 }

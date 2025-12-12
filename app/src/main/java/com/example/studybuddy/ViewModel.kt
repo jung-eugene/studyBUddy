@@ -15,7 +15,6 @@ import com.google.android.gms.auth.UserRecoverableAuthException
 import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +39,10 @@ import java.time.format.DateTimeFormatter
 
 // Manages Firebase user data, like fetching all users info, updating user profile completion
 
+data class AvailabilitySlot( val day: String = "", val timeOfDay: String = "") {
+    fun label(): String = listOf(day, timeOfDay).filter { it.isNotBlank() }.joinToString(" ")
+}
+
 // USER DATA CLASS
 data class User(
     val studyPreferences: List<String> = emptyList(),
@@ -48,7 +51,7 @@ data class User(
     val major: String = "",
     val year: String = "",
     val courses: List<String> = emptyList(),
-    val availability: String = "",
+    val availabilitySlots: List<AvailabilitySlot> = emptyList(),
     val bio: String = "",
     val photoUrl: String = "",
     val email: String = "",
@@ -80,9 +83,15 @@ data class UserUiState(
 class AuthViewModel : ViewModel() {
     private val TAG = "AuthVM"
     private val auth = FirebaseAuth.getInstance()
+    private fun isBuEmail(email: String) = email.trim().lowercase().endsWith("@bu.edu")
 
     // --- LOGIN ---
     fun login(email: String, password: String, onResult: (Boolean) -> Unit) {
+        if (!isBuEmail(email)) {
+            Log.w(TAG, "Login blocked for non-BU email: $email")
+            onResult(false)
+            return
+        }
         Log.d(TAG, "Attempt login with $email")
         auth.signInWithEmailAndPassword(email, password)
             .addOnCompleteListener {
@@ -97,6 +106,11 @@ class AuthViewModel : ViewModel() {
 
     // --- SIGN UP ---
     fun signup(email: String, password: String, onResult: (Boolean) -> Unit) {
+        if (!isBuEmail(email)) {
+            Log.w(TAG, "Signup blocked for non-BU email: $email")
+            onResult(false)
+            return
+        }
         Log.d(TAG, "Attempt signup with $email")
         auth.createUserWithEmailAndPassword(email, password)
             .addOnCompleteListener {
@@ -160,13 +174,27 @@ class UserViewModel : ViewModel() {
             setLoading(true)
             setError(null)
             try {
+                val authEmail = FirebaseAuth.getInstance().currentUser?.email.orEmpty()
                 val doc = db.collection("users").document(uid).get().await()
-                val user = doc.toObject(User::class.java)
-                Log.i(TAG, "Profile loaded for $uid: ${user?.name}")
+                val loadedUser = doc.toObject(User::class.java)
+
+                val patchedUser = if (loadedUser != null && loadedUser.email.isBlank() && authEmail.isNotBlank()) {
+                    try {
+                        db.collection("users").document(uid)
+                            .update("email", authEmail)
+                            .await()
+                        Log.d(TAG, "Backfilled email for $uid")
+                    } catch (updateError: Exception) {
+                        Log.w(TAG, "Failed to backfill email for $uid", updateError)
+                    }
+                    loadedUser.copy(email = authEmail)
+                } else loadedUser
+
+                Log.i(TAG, "Profile loaded for $uid: ${patchedUser?.name}")
 
                 _uiState.value = _uiState.value.copy(
-                    user = user,
-                    darkMode = user?.darkMode ?: false,
+                    user = patchedUser,
+                    darkMode = patchedUser?.darkMode ?: false,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -184,14 +212,19 @@ class UserViewModel : ViewModel() {
             setLoading(true)
             setError(null)
             try {
+                val authEmail = FirebaseAuth.getInstance().currentUser?.email
+                val userToSave = if (updatedUser.email.isBlank() && !authEmail.isNullOrBlank()) {
+                    updatedUser.copy(email = authEmail)
+                } else updatedUser
+
                 db.collection("users").document(uid)
-                    .set(updatedUser, SetOptions.merge())
+                    .set(userToSave)
                     .await()
 
                 Log.i(TAG, "Profile saved for $uid")
 
                 _uiState.value = _uiState.value.copy(
-                    user = updatedUser,
+                    user = userToSave,
                     isLoading = false
                 )
             } catch (e: Exception) {
@@ -235,8 +268,7 @@ class UserViewModel : ViewModel() {
                 // Parse documents into User objects and ensure `id` is set.
                 // Keep any `id` that already exists in the document; otherwise fall back to the Firestore doc id.
                 val users = snapshot.documents.mapNotNull { doc ->
-                    val u = doc.toObject(User::class.java)
-                    if (u == null) return@mapNotNull null
+                    val u = doc.toObject(User::class.java) ?: return@mapNotNull null
                     if (u.id.isBlank()) u.copy(id = doc.id) else u
                 }
 

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
+import com.example.studybuddy.AvailabilitySlot
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
 import com.example.studybuddy.ui.StudyBuddyTopBar
@@ -63,7 +64,7 @@ fun EditProfileScreen(
     var year by remember { mutableStateOf("") }
     var bio by remember { mutableStateOf("") }
     var courses by remember { mutableStateOf(listOf<String>()) }
-    var availability by remember { mutableStateOf(listOf<String>()) }
+    var availability by remember { mutableStateOf(listOf<AvailabilitySlot>()) }
     var studyPreferences by remember { mutableStateOf(listOf<String>()) }
 
     var initialized by remember { mutableStateOf(false) }
@@ -77,7 +78,7 @@ fun EditProfileScreen(
             year = user.year
             bio = user.bio
             courses = user.courses
-            availability = user.availability.split(", ").filter { it.isNotBlank() }
+            availability = user.availabilitySlots
             studyPreferences = user.studyPreferences
             initialized = true
         }
@@ -91,7 +92,7 @@ fun EditProfileScreen(
                         year != old.year ||
                         bio != old.bio ||
                         courses != old.courses ||
-                        availability != old.availability.split(", ") ||
+                        availability != old.availabilitySlots ||
                         studyPreferences != old.studyPreferences
             } ?: false
         }
@@ -296,8 +297,8 @@ fun EditProfileScreen(
             SectionCard(title = "Availability", icon = Icons.Default.AccessTime) {
                 AvailabilityEditor(
                     selected = availability,
-                    onToggle = { label ->
-                        availability = if (label in availability) availability - label else availability + label
+                    onToggle = { slot ->
+                        availability = if (slot in availability) availability - slot else availability + slot
                     },
                     accentColor = BU_RED
                 )
@@ -340,7 +341,7 @@ fun EditProfileScreen(
                             year = year,
                             bio = bio,
                             courses = courses,
-                            availability = availability.joinToString(", "),
+                            availabilitySlots = availability,
                             studyPreferences = studyPreferences,
                             profileSetupComplete = true
                         )
@@ -466,8 +467,8 @@ fun CourseEditor(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AvailabilityEditor(
-    selected: List<String>,
-    onToggle: (String) -> Unit,
+    selected: List<AvailabilitySlot>,
+    onToggle: (AvailabilitySlot) -> Unit,
     accentColor: Color
 ) {
     val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
@@ -548,8 +549,8 @@ fun AvailabilityEditor(
 
         Button(
             onClick = {
-                val label = "$selectedDay $selectedTime"
-                onToggle(label)
+                val slot = AvailabilitySlot(day = selectedDay, timeOfDay = selectedTime)
+                onToggle(slot)
                 selectedDay = ""
                 selectedTime = ""
             },
@@ -566,11 +567,11 @@ fun AvailabilityEditor(
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                selected.forEach { label ->
+                selected.forEach { slot ->
                     AssistChip(
-                        onClick = { onToggle(label) },
+                        onClick = { onToggle(slot) },
                         shape = RoundedCornerShape(50),
-                        label = { Text(label) },
+                        label = { Text(slot.label()) },
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = color.secondary,
                             labelColor = color.primary

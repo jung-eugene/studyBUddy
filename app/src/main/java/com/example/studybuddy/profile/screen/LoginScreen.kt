@@ -82,11 +82,6 @@ fun LoginScreen(
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFD32F2F)
                 )
-//                Text(
-//                    "Swipe, match, and study smarter!",
-//                    fontSize = 14.sp,
-//                    color = Color.Gray
-//                )
 
                 Spacer(Modifier.height(32.dp))
 
@@ -137,13 +132,16 @@ fun LoginScreen(
                 ) {
                     TextButton(
                         onClick = {
-                            if (email.isNotBlank()) {
-                                authVM.resetPassword(email) { _, message ->
-                                    scope.launch { snackbarHostState.showSnackbar(message) }
+                            val normalizedEmail = email.trim()
+                            when {
+                                normalizedEmail.isBlank() -> scope.launch {
+                                    snackbarHostState.showSnackbar("Enter your BU email to reset password.")
                                 }
-                            } else {
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Enter your email to reset password.")
+                                !normalizedEmail.lowercase().endsWith("@bu.edu") -> scope.launch {
+                                    snackbarHostState.showSnackbar("Use your BU email (@bu.edu).")
+                                }
+                                else -> authVM.resetPassword(normalizedEmail) { _, message ->
+                                    scope.launch { snackbarHostState.showSnackbar(message) }
                                 }
                             }
                         },
@@ -158,12 +156,13 @@ fun LoginScreen(
                 // --------- LOGIN / SIGNUP BUTTON ---------
                 Button(
                     onClick = {
+                        val normalizedEmail = email.trim()
                         // VALIDATION LOGIC
-                        if (email.isBlank() || password.isBlank()) {
+                        if (normalizedEmail.isBlank() || password.isBlank()) {
                             scope.launch { snackbarHostState.showSnackbar("Please fill in all fields.") }
                             return@Button
                         }
-                        if (!email.endsWith("@bu.edu")) {
+                        if (!normalizedEmail.lowercase().endsWith("@bu.edu")) {
                             scope.launch { snackbarHostState.showSnackbar("Use your BU email (@bu.edu).") }
                             return@Button
                         }
@@ -173,7 +172,7 @@ fun LoginScreen(
                         }
 
                         if (isLogin) {
-                            authVM.login(email, password) { success ->
+                            authVM.login(normalizedEmail, password) { success ->
                                 if (success) {
                                     val uid = FirebaseAuth.getInstance().currentUser?.uid
                                     if (uid != null) {
@@ -210,7 +209,7 @@ fun LoginScreen(
                                             popUpTo(Routes.Login.route) { inclusive = true }
                                         }
                                     } else {
-                                        snackbarHostState.showSnackbar("Signup failed.")
+                                        snackbarHostState.showSnackbar("Signup failed. Use your BU email (@bu.edu).")
                                     }
                                 }
                             }

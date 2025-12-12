@@ -19,7 +19,7 @@ data class ProfileSetupState(
     val major: String = "",
     val year: String = "",
     val courses: List<String> = emptyList(),
-    val availability: List<String> = emptyList(),
+    val availabilitySlots: List<AvailabilitySlot> = emptyList(),
     val preferences: List<String> = emptyList(),
     val bio: String = ""
 )
@@ -66,12 +66,12 @@ class ProfileSetupViewModel : ViewModel() {
     fun removeCourse(course: String) =
         _state.update { it.copy(courses = it.courses - course) }
 
-    fun toggleAvailability(slot: String) {
+    fun toggleAvailability(slot: AvailabilitySlot) {
         Log.d(TAG, "toggleAvailability: $slot")
         _state.update {
-            val updated = it.availability.toMutableList()
+            val updated = it.availabilitySlots.toMutableList()
             if (slot in updated) updated.remove(slot) else updated.add(slot)
-            it.copy(availability = updated)
+            it.copy(availabilitySlots = updated)
         }
     }
 
@@ -85,17 +85,19 @@ class ProfileSetupViewModel : ViewModel() {
     // Create Firestore User document
     // --------------------------
     fun completeProfile() {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        val uid = firebaseUser?.uid ?: return
         Log.i(TAG, "Saving complete profile for $uid")
         val profile = _state.value
 
         val user = User(
             id = uid,
+            email = firebaseUser.email.orEmpty(),
             name = profile.name,
             major = profile.major,
             year = profile.year,
             courses = profile.courses,
-            availability = profile.availability.joinToString(", "),
+            availabilitySlots = profile.availabilitySlots,
             studyPreferences = profile.preferences,
             bio = profile.bio,
             photoUrl = "",

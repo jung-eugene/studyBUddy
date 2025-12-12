@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.studybuddy.AvailabilitySlot
 import com.example.studybuddy.ProfileSetupState
 import com.example.studybuddy.ProfileSetupViewModel
 import com.example.studybuddy.Routes
@@ -262,7 +263,7 @@ fun Step3Content(
     var dayMenuExpanded by remember { mutableStateOf(false) }
     var timeMenuExpanded by remember { mutableStateOf(false) }
 
-    val isStepValid = state.availability.isNotEmpty()
+    val isStepValid = state.availabilitySlots.isNotEmpty()
 
     Column(Modifier.fillMaxWidth()) {
 
@@ -343,8 +344,8 @@ fun Step3Content(
         Button(
             onClick = {
                 if (selectedDay.isNotBlank() && selectedTime.isNotBlank()) {
-                    val label = "$selectedDay $selectedTime"
-                    setupVM.toggleAvailability(label)
+                    val slot = AvailabilitySlot(day = selectedDay, timeOfDay = selectedTime)
+                    setupVM.toggleAvailability(slot)
                     selectedDay = ""
                     selectedTime = ""
                 }
@@ -359,7 +360,7 @@ fun Step3Content(
         Spacer(Modifier.height(20.dp))
 
         // --- SHOW SELECTED AVAILABILITY AS CHIPS ---
-        if (state.availability.isNotEmpty()) {
+        if (state.availabilitySlots.isNotEmpty()) {
             Text("Selected Times:", fontWeight = FontWeight.Bold)
             Spacer(Modifier.height(8.dp))
 
@@ -368,10 +369,10 @@ fun Step3Content(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                state.availability.forEach { label ->
+                state.availabilitySlots.forEach { slot ->
                     AssistChip(
-                        onClick = { setupVM.toggleAvailability(label) },
-                        label = { Text(label) },
+                        onClick = { setupVM.toggleAvailability(slot) },
+                        label = { Text(slot.label()) },
                         colors = AssistChipDefaults.assistChipColors(
                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
                             labelColor = MaterialTheme.colorScheme.primary
