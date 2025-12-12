@@ -140,6 +140,7 @@ fun MatchesScreen(
     val uiState by userVM.uiState.collectAsState()
     val currentUser = uiState.user
     var selectedUserForPopup by remember { mutableStateOf<User?>(null) }
+    var selectedIsMutual by remember { mutableStateOf(false) }
     var scheduleTarget by remember { mutableStateOf<User?>(null) }
     var showScheduleDialog by remember { mutableStateOf(false) }
 
@@ -249,15 +250,8 @@ fun MatchesScreen(
                                     entry = entry,
                                     onUnmatch = { userVM.unmatchUser(entry.user.id) },
                                     onClick = {
-                                        if (entry.isMutual) {
-                                            selectedUserForPopup = entry.user
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "You can schedule once it's a mutual match",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
+                                        selectedUserForPopup = entry.user
+                                        selectedIsMutual = entry.isMutual
                                     }
                                 )
                             }
@@ -303,6 +297,7 @@ fun MatchesScreen(
                         Spacer(Modifier.height(12.dp))
                         Button(
                             onClick = {
+                                if (!selectedIsMutual) return@Button
                                 selectedUserForPopup?.let { target ->
                                     scheduleTarget = target
                                     if (calendarVM.signedInAccount == null) {
@@ -315,10 +310,27 @@ fun MatchesScreen(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp, vertical = 8.dp)
                                 .fillMaxWidth()
+                            ,
+                            enabled = selectedIsMutual && !signingIn
                         ) {
                             Icon(Icons.Filled.CalendarMonth, contentDescription = null)
                             Spacer(Modifier.width(8.dp))
-                            Text(if (signingIn) "Connecting..." else "Send Calendar Invite")
+                            Text(
+                                when {
+                                    signingIn -> "Connecting..."
+                                    selectedIsMutual -> "Send Calendar Invite"
+                                    else -> "Mutual match required"
+                                }
+                            )
+                        }
+                        if (!selectedIsMutual) {
+                            Text(
+                                text = "Scheduling unlocks after a mutual match.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                            )
                         }
                     }
 
@@ -473,7 +485,7 @@ private fun ScheduleInviteDialog(
                     )
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .matchParentSize()
                             .clickable(
                                 interactionSource = timeTapSource,
                                 indication = null
@@ -501,7 +513,7 @@ private fun ScheduleInviteDialog(
                     )
                     Box(
                         modifier = Modifier
-                            .fillMaxSize()
+                            .matchParentSize()
                             .clickable(
                                 interactionSource = durationTapSource,
                                 indication = null

@@ -470,6 +470,7 @@ class CalendarViewModel : ViewModel() {
                 description = event.description,
                 location = event.location,
                 attendeeEmail = event.attendeeEmail,
+                notifyAttendees = event.attendeeEmail?.isNotBlank() == true,
                 onSuccess = {
                     pendingEvent = null
                     creationStatus = "Session synced to Google Calendar"
@@ -563,6 +564,7 @@ private suspend fun performCalendarCreate(
     description: String?,
     location: String?,
     attendeeEmail: String?,
+    notifyAttendees: Boolean = false,
     onSuccess: (String) -> Unit,
     onFailure: (String) -> Unit,
     onRecover: (Intent?) -> Unit
@@ -580,7 +582,8 @@ private suspend fun performCalendarCreate(
             location = location,
             start = start,
             end = end,
-            attendeeEmail = attendeeEmail
+            attendeeEmail = attendeeEmail,
+            notifyAttendees = notifyAttendees
         )
         result.onSuccess(onSuccess).onFailure { onFailure("Error: ${it.message}") }
     } catch (e: UserRecoverableAuthException) {
@@ -604,7 +607,8 @@ private suspend fun createGoogleCalendarEvent(
     start: ZonedDateTime,
     end: ZonedDateTime,
     timeZoneId: String = ZoneId.systemDefault().id,
-    attendeeEmail: String? = null
+    attendeeEmail: String? = null,
+    notifyAttendees: Boolean = false
 ): Result<String> = withContext(Dispatchers.IO) {
     try {
         val formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME
@@ -627,12 +631,15 @@ private suspend fun createGoogleCalendarEvent(
                 ?.let { email ->
                     val attendee = JSONObject()
                     attendee.put("email", email)
-                    attendee.put("responseStatus", "accepted")
                     put("attendees", JSONArray().apply { put(attendee) })
                 }
         }
 
-        val url = URL("https://www.googleapis.com/calendar/v3/calendars/primary/events")
+        val urlString = buildString {
+            append("https://www.googleapis.com/calendar/v3/calendars/primary/events")
+            if (notifyAttendees) append("?sendUpdates=all")
+        }
+        val url = URL(urlString)
         val conn = (url.openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
             setRequestProperty("Authorization", "Bearer $accessToken")
