@@ -79,7 +79,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
-import com.example.studybuddy.BuildConfig
 import com.example.studybuddy.CalendarViewModel
 import com.example.studybuddy.DurationOption
 import com.example.studybuddy.LocationType
@@ -97,6 +96,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
+
 import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -105,6 +105,8 @@ import java.util.Locale
 import com.example.studybuddy.ui.StudyBuddyTopBar
 
 private const val TAG = "CalendarScreen"
+// OAuth web client ID from the current Firebase/Google Cloud project (matches google-services.json)
+private const val GOOGLE_WEB_CLIENT_ID = "275610785003-tlgs2ht9s9ks022r1lgmr3k0eebpmuou.apps.googleusercontent.com"
 
 // Enums for variable Days of Week, include sun -> sat since calendar format
 private val daysOfWeek = listOf(
@@ -171,7 +173,7 @@ fun CalendarScreen(
     fun launchSignIn() {
         calendarViewModel.updateSigningIn(true)
         val googleIdOption = GetGoogleIdOption.Builder()
-            .setServerClientId(BuildConfig.WEB_CLIENT_ID)
+            .setServerClientId(GOOGLE_WEB_CLIENT_ID)
             .setFilterByAuthorizedAccounts(false)
             .build()
         val request = GetCredentialRequest.Builder()
