@@ -505,7 +505,6 @@ private fun SessionListSection(selectedDate: LocalDate, sessions: List<StudySess
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     } else {
-        Spacer(modifier = Modifier.height(12.dp))
         sessions.forEach { session ->
             SessionCard(session = session)
             Spacer(modifier = Modifier.height(12.dp))
