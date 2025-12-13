@@ -32,6 +32,15 @@ fun StudyBuddyNavGraph(
             )
         }
 
+        // VERIFY EMAIL
+        composable(Routes.VerifyEmail.route) {
+            VerifyEmailScreen(
+                navController = navController,
+                authVM = authVM,
+                userVM = userVM
+            )
+        }
+
         // PROFILE SETUP
         composable(Routes.ProfileSetup.route) {
             ProfileSetupScreen(
@@ -57,14 +66,6 @@ fun StudyBuddyNavGraph(
                 calendarVM = calendarVM
             )
         }
-
-//        // UN-MATCHED
-//        composable(Routes.DeletedMatches.route) {
-//            DeletedMatchesScreen(
-//                navController = navController,
-//                userVM = userVM
-//            )
-//        }
 
         // CALENDAR
         composable(Routes.Calendar.route) {
@@ -103,5 +104,6 @@ sealed class Routes(val route: String) {
     object Calendar : Routes("calendar")
     object Profile : Routes("profile")
     object ProfileSetup : Routes("profile_setup")
+    object VerifyEmail : Routes("verify_email")
     object Splash : Routes("splash")
 }

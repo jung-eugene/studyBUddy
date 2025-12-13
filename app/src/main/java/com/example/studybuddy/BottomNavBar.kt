@@ -26,6 +26,7 @@ fun BottomNavBar(navController: NavHostController) {
     // Hide navbar on some screens
     val hideOnRoutes = listOf(
         Routes.Login.route,
+        Routes.VerifyEmail.route,
         Routes.ProfileSetup.route,
         Routes.Edit.route,
         Routes.Splash.route
