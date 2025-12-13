@@ -9,18 +9,17 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavHostController
 import com.example.studybuddy.Routes
 import com.example.studybuddy.UserViewModel
@@ -30,8 +29,7 @@ import kotlinx.coroutines.launch
 import com.example.studybuddy.ui.StudyBuddyTopBar
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -374,44 +372,146 @@ fun EditProfileScreen(
         }
 
         if (showCancelDialog) {
-            AlertDialog(
-                onDismissRequest = { showCancelDialog = false },
-                title = { Text("Discard changes?") },
-                text = { Text("You have unsaved edits. Do you want to discard them?") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        showCancelDialog = false
-                        navController.navigate(Routes.Profile.route) {
-                            popUpTo(Routes.Profile.route) { inclusive = false }
+            Dialog(onDismissRequest = { showCancelDialog = false }) {
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    tonalElevation = 6.dp,
+                    shadowElevation = 12.dp,
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
+                        Icon(
+                            imageVector = Icons.Outlined.Warning,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(40.dp)
+                        )
+
+                        Spacer(Modifier.height(16.dp))
+
+                        Text(
+                            text = "Discard Changes?",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.Black
+                        )
+
+                        Spacer(Modifier.height(8.dp))
+
+                        Text(
+                            text = "You have unsaved edits. Are you sure you want to leave this page?",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.DarkGray,
+                            modifier = Modifier.padding(horizontal = 12.dp),
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(24.dp))
+
+                        // Buttons row
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+
+                            // Keep Editing
+                            OutlinedButton(
+                                onClick = { showCancelDialog = false },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.Gray
+                                )
+                            ) {
+                                Text("Keep Editing")
+                            }
+
+                            // Discard
+                            Button(
+                                onClick = {
+                                    showCancelDialog = false
+                                    navController.navigate(Routes.Profile.route) {
+                                        popUpTo(Routes.Profile.route) { inclusive = false }
+                                    }
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color(0xFFD32F2F),
+                                    contentColor = Color.White
+                                ),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text("Discard")
+                            }
                         }
-                    }) { Text("Discard", color = BU_RED) }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showCancelDialog = false }) {
-                        Text("Keep Editing")
                     }
                 }
-            )
+            }
         }
 
         if (showPhotoSourceDialog) {
             AlertDialog(
                 onDismissRequest = { showPhotoSourceDialog = false },
-                title = { Text("Change Profile Photo") },
-                text = { Text("Choose a source") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        cameraImageUri = createImageUri()
-                        takePictureLauncher.launch(cameraImageUri!!)
-                        showPhotoSourceDialog = false
-                    }) { Text("Take Photo") }
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Outlined.CameraAlt,
+                            contentDescription = null,
+                            tint = Color(0xFFD32F2F),
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Change Profile Photo",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = Color.Black
+                        )
+                    }
                 },
-                dismissButton = {
-                    TextButton(onClick = {
-                        imagePickerLauncher.launch("image/*")
-                        showPhotoSourceDialog = false
-                    }) { Text("Choose from Gallery") }
-                }
+                text = {
+                    Text(
+                        "Choose how you'd like to update your photo.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray
+                    )
+                },
+                confirmButton = {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // Take Photo
+                        Button(
+                            onClick = {
+                                cameraImageUri = createImageUri()
+                                takePictureLauncher.launch(cameraImageUri!!)
+                                showPhotoSourceDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Take Photo")
+                        }
+
+                        // Choose from Gallery
+                        OutlinedButton(
+                            onClick = {
+                                imagePickerLauncher.launch("image/*")
+                                showPhotoSourceDialog = false
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Choose from Gallery")
+                        }
+                    }
+                },
+                dismissButton = {}
             )
         }
     }

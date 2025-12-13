@@ -23,26 +23,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,13 +34,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.HomeViewModel
 import com.example.studybuddy.User
 import com.example.studybuddy.UserViewModel
+import com.example.studybuddy.AvailabilitySlot
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import com.example.studybuddy.ui.StudyBuddyTopBar
@@ -69,16 +54,65 @@ fun MatchPopup(
     matchedUser: User,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("It's a Match!") },
-        text = {
-            Text("You and ${matchedUser.name} both liked each other.\nStart a study session!")
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) { Text("Awesome!") }
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            tonalElevation = 6.dp,
+            shadowElevation = 12.dp,
+            color = Color.White,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp)
+        ) {
+
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Favorite,
+                    contentDescription = null,
+                    tint = Color(0xFFD32F2F),
+                    modifier = Modifier.size(40.dp)
+                )
+
+                Spacer(Modifier.height(16.dp))
+
+                Text(
+                    text = "It's a Match!",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.Black
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    text = "You and ${matchedUser.name} matched! \nStart a study session together.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.DarkGray,
+                    modifier = Modifier.padding(horizontal = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(Modifier.height(24.dp))
+
+                Button(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFD32F2F),
+                        contentColor = Color.White
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .height(46.dp)
+                ) {
+                    Text("Awesome!")
+                }
+            }
         }
-    )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -322,7 +356,9 @@ private fun SwipeableUserCard(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun UserCardCompact(user: User) {
+fun UserCardCompact(
+    user: User, elevation: Dp = 6.dp
+) {
     val red = Color(0xFFD32F2F)
     val lightRed = Color(0xFFFFEBEE)
     val chipGreyBg = Color(0xFFF2F2F2)
@@ -334,10 +370,10 @@ fun UserCardCompact(user: User) {
             .padding(horizontal = 4.dp, vertical = 4.dp),
         shape = RoundedCornerShape(22.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = elevation)
     ) {
 
-        Column(
+    Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(red)
@@ -469,4 +505,27 @@ private fun Chip(text: String, bg: Color, fg: Color) {
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
         )
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MatchPopupPreview() {
+    val fakeUser = User(
+        id = "123",
+        name = "Preview Student",
+        major = "Computer Science",
+        year = "Junior",
+        courses = listOf("CS 111", "CS 131"),
+        studyPreferences = listOf("Night Owl", "Library"),
+        availabilitySlots = listOf(
+            AvailabilitySlot("Monday Morning"),
+            AvailabilitySlot("Wednesday Afternoon")
+        ),
+        email = "preview@bu.edu"
+    )
+
+    MatchPopup(
+        matchedUser = fakeUser,
+        onDismiss = {}
+    )
 }
