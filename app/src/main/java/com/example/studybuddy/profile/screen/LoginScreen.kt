@@ -38,21 +38,34 @@ fun LoginScreen(
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-        val verified = FirebaseAuth.getInstance().currentUser?.isEmailVerified == true
+        val user = FirebaseAuth.getInstance().currentUser
 
-        if (uid != null) {
-            if (verified) {
-                Log.d("LoginScreen", "User already logged in, loading profile for darkMode")
-                userVM.loadUserProfile(uid)
-            } else {
-                Log.d("LoginScreen", "User logged in but NOT verified -> navigating to VerifyEmail")
-                navController.navigate(Routes.VerifyEmail.route) {
-                    popUpTo(Routes.Login.route) { inclusive = true }
-                }
+        // 1. No user -> stay on login screen
+        if (user == null) return@LaunchedEffect
+
+        // 2. If user came back AND they finished setup in the past -> skip verify
+        val uid = user.uid
+        val setupComplete = userVM.isProfileSetupComplete(uid)
+
+        if (setupComplete) {
+            // User already completed onboarding → go straight home
+            navController.navigate(Routes.Home.route) {
+                popUpTo(Routes.Login.route) { inclusive = true }
             }
-        } else {
-            Log.d("LoginScreen", "No user logged in — resetting darkMode")
+            return@LaunchedEffect
+        }
+
+        // 3. If user did NOT complete setup, but is verified → go to ProfileSetup
+        if (user.isEmailVerified) {
+            navController.navigate(Routes.ProfileSetup.route) {
+                popUpTo(Routes.Login.route) { inclusive = true }
+            }
+            return@LaunchedEffect
+        }
+
+        // 4. If user is NOT verified AND signup just happened → send to VerifyEmail
+        navController.navigate(Routes.VerifyEmail.route) {
+            popUpTo(Routes.Login.route) { inclusive = true }
         }
     }
 
@@ -182,30 +195,35 @@ fun LoginScreen(
                         if (isLogin) {
                             authVM.login(normalizedEmail, password) { success ->
                                 if (success) {
-                                    val uid = FirebaseAuth.getInstance().currentUser?.uid
                                     val user = FirebaseAuth.getInstance().currentUser
-                                    if (user != null && !user.isEmailVerified) {
-                                        navController.navigate(Routes.VerifyEmail.route) {
-                                            popUpTo(Routes.Login.route) { inclusive = true }
+
+                                    // Reload user to get up-to-date verification status
+                                    user?.reload()?.addOnCompleteListener {
+                                        val refreshed = FirebaseAuth.getInstance().currentUser
+
+                                        if (refreshed != null && !refreshed.isEmailVerified) {
+                                            // New user or unverified user → go to verify screen
+                                            navController.navigate(Routes.VerifyEmail.route) {
+                                                popUpTo(Routes.Login.route) { inclusive = true }
+                                            }
+                                            return@addOnCompleteListener
                                         }
-                                        return@login
-                                    }
-                                    if (uid != null) {
-                                        scope.launch {
-                                            // Load user profile FIRST → needed for dark mode to apply instantly
-                                            userVM.loadUserProfile(uid)
 
-                                            // Check if user completed profile setup
-                                            val setupComplete = userVM.isProfileSetupComplete(uid)
-                                            Log.d("LoginScreen", "Profile setup complete: $setupComplete")
+                                        // Verified → proceed normally
+                                        val uid = refreshed?.uid
+                                        if (uid != null) {
+                                            scope.launch {
+                                                userVM.loadUserProfile(uid)
+                                                val setupComplete = userVM.isProfileSetupComplete(uid)
 
-                                            if (setupComplete) {
-                                                navController.navigate(Routes.Home.route) {
-                                                    popUpTo(Routes.Login.route) { inclusive = true }
-                                                }
-                                            } else {
-                                                navController.navigate(Routes.ProfileSetup.route) {
-                                                    popUpTo(Routes.Login.route) { inclusive = true }
+                                                if (setupComplete) {
+                                                    navController.navigate(Routes.Home.route) {
+                                                        popUpTo(Routes.Login.route) { inclusive = true }
+                                                    }
+                                                } else {
+                                                    navController.navigate(Routes.ProfileSetup.route) {
+                                                        popUpTo(Routes.Login.route) { inclusive = true }
+                                                    }
                                                 }
                                             }
                                         }
