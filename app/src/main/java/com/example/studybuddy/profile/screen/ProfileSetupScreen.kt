@@ -1,5 +1,6 @@
 package com.example.studybuddy.profile.screen
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.text.KeyboardActions
@@ -12,6 +13,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -21,6 +23,9 @@ import com.example.studybuddy.ProfileSetupState
 import com.example.studybuddy.ProfileSetupViewModel
 import com.example.studybuddy.Routes
 import com.example.studybuddy.ui.StudyBuddyTopBar
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 
 // The profile setup page (will include everyinformation that will be used later on for filtering to find the studyBUddy match)
@@ -34,6 +39,10 @@ fun ProfileSetupScreen(
     val state by viewModel.state.collectAsState()
     val profileSaved by viewModel.profileSaved.collectAsState()
     var showExitDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var verified by remember { mutableStateOf(FirebaseAuth.getInstance().currentUser?.isEmailVerified == true) }
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
 
 
     //Reactively navigate once Firestore save completes
@@ -45,7 +54,21 @@ fun ProfileSetupScreen(
         }
     }
 
+    LaunchedEffect(Unit) {
+        // Refresh auth state so isEmailVerified is up-to-date
+        FirebaseAuth.getInstance().currentUser?.reload()?.addOnCompleteListener {
+            verified = FirebaseAuth.getInstance().currentUser?.isEmailVerified == true
+            if (!verified) {
+                Toast.makeText(context, "Verify your BU email before setting up your profile.", Toast.LENGTH_LONG).show()
+                navController.navigate(Routes.VerifyEmail.route) {
+                    popUpTo(Routes.Login.route) { inclusive = true }
+                }
+            }
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             StudyBuddyTopBar(
                 title = "Step $currentStep of 4",
@@ -87,7 +110,21 @@ fun ProfileSetupScreen(
                 4 -> Step4Content(
                     state = state,
                     setupVM = viewModel,
-                    onComplete = { viewModel.completeProfile() }
+                    onComplete = {
+                        scope.launch {
+                            // Reload to get fresh verified flag
+                            FirebaseAuth.getInstance().currentUser?.reload()?.await()
+                            verified = FirebaseAuth.getInstance().currentUser?.isEmailVerified == true
+                            if (!verified) {
+                                snackbarHostState.showSnackbar("Verify your BU email first, then tap 'I verified my email'.")
+                                navController.navigate(Routes.VerifyEmail.route) {
+                                    popUpTo(Routes.Login.route) { inclusive = true }
+                                }
+                                return@launch
+                            }
+                            viewModel.completeProfile()
+                        }
+                    }
                 )
             }
         }

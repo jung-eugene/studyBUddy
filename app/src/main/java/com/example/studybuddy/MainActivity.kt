@@ -33,11 +33,12 @@ class MainActivity : ComponentActivity() {
             // --- Load dark mode on startup ---
             val auth = FirebaseAuth.getInstance()
             val uid = auth.currentUser?.uid
+            val isVerified = auth.currentUser?.isEmailVerified == true
 
-            LaunchedEffect(uid) {
-                uid?.let { id ->
+            LaunchedEffect(uid, isVerified) {
+                if (uid != null && isVerified) {
                     // load user profile so uiState.darkMode gets updated
-                    userVM.loadUserProfile(id)
+                    userVM.loadUserProfile(uid)
                 }
             }
 

@@ -87,6 +87,10 @@ class ProfileSetupViewModel : ViewModel() {
     fun completeProfile() {
         val firebaseUser = FirebaseAuth.getInstance().currentUser
         val uid = firebaseUser?.uid ?: return
+        if (firebaseUser.isEmailVerified.not()) {
+            Log.w(TAG, "Attempted to save profile while email not verified.")
+            return
+        }
         Log.i(TAG, "Saving complete profile for $uid")
         val profile = _state.value
 

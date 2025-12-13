@@ -39,10 +39,18 @@ fun LoginScreen(
 
     LaunchedEffect(Unit) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
+        val verified = FirebaseAuth.getInstance().currentUser?.isEmailVerified == true
 
         if (uid != null) {
-            Log.d("LoginScreen", "User already logged in, loading profile for darkMode")
-            userVM.loadUserProfile(uid)
+            if (verified) {
+                Log.d("LoginScreen", "User already logged in, loading profile for darkMode")
+                userVM.loadUserProfile(uid)
+            } else {
+                Log.d("LoginScreen", "User logged in but NOT verified -> navigating to VerifyEmail")
+                navController.navigate(Routes.VerifyEmail.route) {
+                    popUpTo(Routes.Login.route) { inclusive = true }
+                }
+            }
         } else {
             Log.d("LoginScreen", "No user logged in — resetting darkMode")
         }
@@ -175,6 +183,13 @@ fun LoginScreen(
                             authVM.login(normalizedEmail, password) { success ->
                                 if (success) {
                                     val uid = FirebaseAuth.getInstance().currentUser?.uid
+                                    val user = FirebaseAuth.getInstance().currentUser
+                                    if (user != null && !user.isEmailVerified) {
+                                        navController.navigate(Routes.VerifyEmail.route) {
+                                            popUpTo(Routes.Login.route) { inclusive = true }
+                                        }
+                                        return@login
+                                    }
                                     if (uid != null) {
                                         scope.launch {
                                             // Load user profile FIRST → needed for dark mode to apply instantly
@@ -202,11 +217,17 @@ fun LoginScreen(
                                 }
                             }
                         } else {
-                            authVM.signup(email, password) { success ->
+                            authVM.signup(normalizedEmail, password) { success ->
                                 scope.launch {
                                     if (success) {
-                                        navController.navigate(Routes.ProfileSetup.route) {
-                                            popUpTo(Routes.Login.route) { inclusive = true }
+                                        authVM.sendVerificationEmail { sent, msg ->
+                                            scope.launch {
+                                                snackbarHostState.showSnackbar(msg)
+                                                if (!sent) return@launch
+                                                navController.navigate(Routes.VerifyEmail.route) {
+                                                    popUpTo(Routes.Login.route) { inclusive = true }
+                                                }
+                                            }
                                         }
                                     } else {
                                         snackbarHostState.showSnackbar("Signup failed. Use your BU email (@bu.edu).")

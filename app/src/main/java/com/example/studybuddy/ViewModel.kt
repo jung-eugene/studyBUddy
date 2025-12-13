@@ -139,6 +139,30 @@ class AuthViewModel : ViewModel() {
             }
     }
 
+    fun sendVerificationEmail(onResult: (Boolean, String) -> Unit) {
+        val user = auth.currentUser
+        if (user == null) {
+            onResult(false, "No signed-in user.")
+            return
+        }
+        user.sendEmailVerification()
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    onResult(true, "Verification email sent to ${user.email}")
+                } else {
+                    onResult(false, task.exception?.message ?: "Failed to send verification email.")
+                }
+            }
+    }
+
+    fun reloadAndCheckVerified(onResult: (Boolean) -> Unit) {
+        val user = auth.currentUser ?: return onResult(false)
+        user.reload()
+            .addOnCompleteListener {
+                onResult(user.isEmailVerified)
+            }
+    }
+
     // --- PASSWORD RESET ---
     fun resetPassword(email: String, onResult: (Boolean, String) -> Unit) {
         Log.d(TAG, "Requesting password reset for $email")
@@ -436,10 +460,15 @@ class UserViewModel : ViewModel() {
 
     suspend fun isProfileSetupComplete(uid: String): Boolean {
         Log.d(TAG, "Checking profileSetupComplete for $uid")
-        val doc = db.collection("users").document(uid).get().await()
-        val result = doc.getBoolean("profileSetupComplete") ?: false
-        Log.i(TAG, "profileSetupComplete = $result for $uid")
-        return result
+        return try {
+            val doc = db.collection("users").document(uid).get().await()
+            val result = doc.getBoolean("profileSetupComplete") ?: false
+            Log.i(TAG, "profileSetupComplete = $result for $uid")
+            result
+        } catch (e: Exception) {
+            Log.e(TAG, "isProfileSetupComplete ERROR for $uid", e)
+            false
+        }
     }
 
 }
