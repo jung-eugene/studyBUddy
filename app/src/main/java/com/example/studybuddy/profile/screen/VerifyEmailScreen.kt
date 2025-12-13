@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
@@ -64,7 +65,7 @@ fun VerifyEmailScreen(
     }
 
     Scaffold(
-        topBar = { StudyBuddyTopBar(title = "Verify BU Email", showBack = false) },
+        topBar = { StudyBuddyTopBar(title = "studyBUddy", showBack = false) },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { pad ->
         Column(
@@ -78,15 +79,15 @@ fun VerifyEmailScreen(
             Icon(
                 imageVector = Icons.Filled.MarkEmailUnread,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
             )
-
             Text(
-                text = "Check your BU inbox",
+                text = "Verify your BU email",
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             Text(
-                text = "We sent a verification link to $email. Please verify before continuing.",
+                text = "We sent a verification link to $email.\nPlease open the email and tap the link to continue.",
                 style = MaterialTheme.typography.bodyMedium
             )
 
@@ -98,16 +99,28 @@ fun VerifyEmailScreen(
                     modifier = Modifier.padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("Didn’t get the email?", fontWeight = FontWeight.SemiBold)
-                    Text("• Check spam\n• Make sure you used your @bu.edu address\n• You can resend the link below")
+                    Text(
+                        "Didn’t receive the email?",
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        "• Check your spam folder\n" +
+                                "• Make sure you signed up with your @bu.edu address\n" +
+                                "• You can resend the verification link below",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     TextButton(onClick = {
                         authVM.sendVerificationEmail { ok, msg ->
                             scope.launch { snackbarHostState.showSnackbar(msg) }
                         }
                     }) {
-                        Icon(Icons.Filled.Email, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Icon(
+                            Icons.Filled.Email,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
                         Spacer(Modifier.width(8.dp))
-                        Text("Resend verification")
+                        Text("Resend verification email")
                     }
                 }
             }
@@ -119,30 +132,29 @@ fun VerifyEmailScreen(
                     authVM.reloadAndCheckVerified { verified ->
                         checking = false
                         if (verified) {
-                            scope.launch {
-                                navigatePostVerify(navController, userVM)
+                            // User is verified → sign out and go to login
+                            authVM.signOut()
+                            navController.navigate(Routes.Login.route) {
+                                popUpTo(0) { inclusive = true }
                             }
                         } else {
-                            scope.launch { snackbarHostState.showSnackbar("Still not verified. Try again after clicking the email link.") }
+                            scope.launch {
+                                snackbarHostState.showSnackbar(
+                                    "Email not verified yet. Please click the link in your inbox."
+                                )
+                            }
                         }
                     }
                 },
                 enabled = !checking
             ) {
                 if (checking) {
-                    CircularProgressIndicator(modifier = Modifier.height(16.dp))
+                    CircularProgressIndicator(
+                        modifier = Modifier.height(16.dp)
+                    )
                 } else {
-                    Text("I verified my email")
+                    Text("Continue")
                 }
-            }
-
-            TextButton(
-                onClick = {
-                    authVM.signOut()
-                    navController.navigate(Routes.Login.route) { popUpTo(0) { inclusive = true } }
-                }
-            ) {
-                Text("Back to login")
             }
         }
     }
