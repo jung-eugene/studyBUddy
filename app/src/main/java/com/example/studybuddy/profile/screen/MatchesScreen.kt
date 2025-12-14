@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.ui.window.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -190,56 +191,94 @@ fun MatchesScreen(
                 }
 
                 else -> {
-                    LazyColumn(
+                    var searchQuery by rememberSaveable { mutableStateOf("") }
+                    val filteredMatches = remember(uiState.matches, searchQuery) {
+                        filterMatches(uiState.matches, searchQuery)
+                    }
+                    val filteredDeleted = remember(uiState.deletedMatches, searchQuery) {
+                        filterMatches(uiState.deletedMatches, searchQuery)
+                    }
+                    val hasResults = filteredMatches.isNotEmpty() || filteredDeleted.isNotEmpty()
+
+                    Column(
                         modifier = Modifier
                             .padding(16.dp)
                             .fillMaxSize(),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        if (uiState.matches.isNotEmpty()) {
-                            item {
-                                Text(
-                                    "Current Matches",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { searchQuery = it },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Outlined.Search, contentDescription = null) },
+                            label = { Text("Filter matches") },
+                            placeholder = { Text("Search by name, course, availability, preference") },
+                            singleLine = true
+                        )
 
-                            items(
-                                items = uiState.matches,
-                                key = { it.user.id }
-                            ) { entry ->
-                                MatchCard(
-                                    entry = entry,
-                                    onUnmatch = { userVM.unmatchUser(entry.user.id) },
-                                    onClick = {
-                                        selectedUserForPopup = entry.user
-                                        selectedIsMutual = entry.isMutual
+                        if (!hasResults) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = "No matches found for \"$searchQuery\"",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                if (filteredMatches.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            "Current Matches",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
                                     }
-                                )
-                            }
-                            item { Spacer(modifier = Modifier.height(8.dp)) }
-                        }
 
-                        if (uiState.deletedMatches.isNotEmpty()) {
-                            item {
-                                Text(
-                                    "Past Matches",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onBackground
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
+                                    items(
+                                        items = filteredMatches,
+                                        key = { it.user.id }
+                                    ) { entry ->
+                                        MatchCard(
+                                            entry = entry,
+                                            onUnmatch = { userVM.unmatchUser(entry.user.id) },
+                                            onClick = {
+                                                selectedUserForPopup = entry.user
+                                                selectedIsMutual = entry.isMutual
+                                            }
+                                        )
+                                    }
+                                    item { Spacer(modifier = Modifier.height(8.dp)) }
+                                }
 
-                            items(
-                                items = uiState.deletedMatches,
-                                key = { it.user.id }
-                            ) { entry ->
-                                DeletedMatchCard(
-                                    entry = entry,
-                                    onRestore = { userVM.undoUnmatch(entry.user.id) }
-                                )
+                                if (filteredDeleted.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            "Past Matches",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = MaterialTheme.colorScheme.onBackground
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
+
+                                    items(
+                                        items = filteredDeleted,
+                                        key = { it.user.id }
+                                    ) { entry ->
+                                        DeletedMatchCard(
+                                            entry = entry,
+                                            onRestore = { userVM.undoUnmatch(entry.user.id) }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -927,6 +966,46 @@ private fun DeletedMatchCard(
                     Text("Restore")
                 }
             }
+        }
+    }
+}
+
+private fun filterMatches(
+    entries: List<MatchEntry>,
+    query: String
+): List<MatchEntry> {
+    if (query.isBlank()) return entries
+
+    val terms = query
+        .lowercase(Locale.getDefault())
+        .split(" ")
+        .filter { it.isNotBlank() }
+
+    return entries.filter { entry ->
+        val user = entry.user
+        val availability = user.availabilitySlots.joinToString(" ") { slot ->
+            listOf(
+                slot.day,
+                slot.timeOfDay,
+                slot.meetTimes.joinToString(" ")
+            ).joinToString(" ")
+        }
+        val combinedRaw = listOf(
+            user.name,
+            user.major,
+            user.year,
+            user.studyPreferences.joinToString(" "),
+            user.courses.joinToString(" "),
+            availability
+        )
+            .joinToString(" ")
+            .lowercase(Locale.getDefault())
+
+        val collapsedCombined = combinedRaw.filterNot { it.isWhitespace() }
+
+        terms.all { term ->
+            val normalizedTerm = term.filterNot { it.isWhitespace() }
+            combinedRaw.contains(term) || collapsedCombined.contains(normalizedTerm)
         }
     }
 }
