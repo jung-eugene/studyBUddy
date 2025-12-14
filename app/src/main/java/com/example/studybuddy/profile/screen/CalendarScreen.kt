@@ -36,13 +36,16 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +61,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -81,6 +83,8 @@ import com.example.studybuddy.DurationOption
 import com.example.studybuddy.LocationType
 import com.example.studybuddy.PendingEvent
 import com.example.studybuddy.StudySession
+import com.example.studybuddy.CalendarEvent
+import com.example.studybuddy.CalendarAttendee
 import com.example.studybuddy.buildSessionDescription
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
@@ -149,7 +153,10 @@ fun CalendarScreen(
     val signingIn: Boolean = calendarViewModel.signingIn
     val currentMonth: YearMonth = calendarViewModel.currentMonth
     val selectedDate: LocalDate = calendarViewModel.selectedDate
-    val sessions: SnapshotStateList<StudySession> = calendarViewModel.sessions
+    val remoteEvents = calendarViewModel.remoteEvents
+    val isFetchingEvents = calendarViewModel.isFetchingEvents
+    val eventsError = calendarViewModel.eventsError
+    val currentUserEmail = calendarViewModel.signedInEmail
 
     /*
     * Entrypoint for the Google Identity flow. Requests a Google ID token so we can
@@ -176,6 +183,7 @@ fun CalendarScreen(
                     if (email.isNotBlank()) {
                         val account = Account(email, "com.google")
                         calendarViewModel.onSignedIn(email, account)
+                        calendarViewModel.fetchUpcomingEvents(context)
                         val displayName = googleCredential.displayName?.takeUnless { it.isBlank() } ?: email
                         Toast.makeText(context, "Signed in as $displayName", Toast.LENGTH_SHORT).show()
                     } else {
@@ -197,13 +205,19 @@ fun CalendarScreen(
     }
 
     fun launchSignOut() {
-        // Best effort clear of the token + UI feedback — data is guarded via view model.
+        // Best effort clear of the token + UI feedback - data is guarded via view model.
         calendarViewModel.clearAccount()
         Toast.makeText(context, "Signed out", Toast.LENGTH_SHORT).show()
         coroutineScope.launch {
             runCatching {
                 credentialManager.clearCredentialState(ClearCredentialStateRequest())
             }.onFailure { Log.w(TAG, "Failed to clear credential state", it) }
+        }
+    }
+
+    LaunchedEffect(signedInAccount) {
+        if (signedInAccount != null) {
+            calendarViewModel.fetchUpcomingEvents(context)
         }
     }
 
@@ -223,12 +237,16 @@ fun CalendarScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
 
-            GoogleAccountStatusCard(
-                email = signedInEmail,
-                signingIn = signingIn,
-                onSignIn = ::launchSignIn,
-                onSignOut = ::launchSignOut
-            )
+    GoogleAccountStatusCard(
+        email = signedInEmail,
+        signingIn = signingIn,
+        isFetchingEvents = isFetchingEvents,
+        onSignIn = ::launchSignIn,
+        onSignOut = ::launchSignOut,
+        onRefresh = {
+            calendarViewModel.fetchUpcomingEvents(context)
+        }
+    )
 
             CalendarCard(
                 month = currentMonth,
@@ -239,7 +257,10 @@ fun CalendarScreen(
 
             SessionListSection(
                 selectedDate = selectedDate,
-                sessions = sessions.filter { it.date == selectedDate }
+                remoteEvents = remoteEvents[selectedDate].orEmpty(),
+                isFetchingExternal = isFetchingEvents,
+                eventsError = eventsError,
+                currentUserEmail = currentUserEmail
             )
 
         }
@@ -249,8 +270,10 @@ fun CalendarScreen(
 private fun GoogleAccountStatusCard(
     email: String?,
     signingIn: Boolean,
+    isFetchingEvents: Boolean,
     onSignIn: () -> Unit,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onRefresh: () -> Unit
 ) {
     /*
     * card-like UI that shows the email of the logged in user or directs user to login using the button.
@@ -280,7 +303,30 @@ private fun GoogleAccountStatusCard(
                     Text(if (signingIn) "Signing in..." else "Sign in with Google")
                 }
             } else {
-                Text("Signed in as $email")
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Signed in as $email", modifier = Modifier.weight(1f))
+                    IconButton(
+                        onClick = onRefresh,
+                        enabled = !isFetchingEvents && !signingIn
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.Refresh,
+                            contentDescription = "Refresh calendar",
+                            tint = if (isFetchingEvents) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                if (isFetchingEvents) {
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                }
                 Button(onClick = onSignOut) {
                     Text("Sign out")
                 }
@@ -492,22 +538,52 @@ private fun buildCalendarDays(month: YearMonth): List<LocalDate?> {
     }
 }
 @Composable
-private fun SessionListSection(selectedDate: LocalDate, sessions: List<StudySession>) {
+private fun SessionListSection(
+    selectedDate: LocalDate,
+    remoteEvents: List<CalendarEvent>,
+    isFetchingExternal: Boolean,
+    eventsError: String?,
+    currentUserEmail: String?
+) {
     val headerFormatter = remember { DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy") }
     Text(
         text = "Sessions on ${selectedDate.format(headerFormatter)}",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold
     )
-    if (sessions.isEmpty()) {
+    if (remoteEvents.isEmpty() && !isFetchingExternal) {
         Text(
             text = "No sessions scheduled for this day.",
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     } else {
-        sessions.forEach { session ->
-            SessionCard(session = session)
+        if (remoteEvents.isNotEmpty() || isFetchingExternal) {
+            Text(
+                text = "Google Calendar",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+            )
+        }
+        if (isFetchingExternal && remoteEvents.isEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+                Text("Fetching events...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        remoteEvents.forEach { event ->
+            RemoteEventCard(event = event, currentUserEmail = currentUserEmail)
             Spacer(modifier = Modifier.height(12.dp))
+        }
+        eventsError?.let { msg ->
+            Text(
+                text = msg,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
+            )
         }
     }
 }
@@ -587,10 +663,124 @@ private fun SessionCard(session: StudySession) {
 }
 
 @Composable
+private fun RemoteEventCard(event: CalendarEvent, currentUserEmail: String?) {
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM d") }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("h:mm a") }
+    val timeText = buildString {
+        append(timeFormatter.format(event.start.toLocalTime()))
+        event.end?.let { end ->
+            append("  ").append(timeFormatter.format(end.toLocalTime()))
+        }
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.CalendarMonth,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Column {
+                    Text(
+                        text = event.title.ifBlank { "Calendar Event" },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = "Google Calendar",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            SessionDetailRow(
+                icon = Icons.Default.CalendarMonth,
+                text = dateFormatter.format(event.start.toLocalDate())
+            )
+            SessionDetailRow(
+                icon = Icons.Default.AccessTime,
+                text = timeText
+            )
+            SessionDetailRow(
+                icon = Icons.Default.LocationOn,
+                text = event.location ?: "No location"
+            )
+            if (event.attendees.isNotEmpty()) {
+                Text(
+                    text = "Guests",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                AttendeesList(attendees = event.attendees, currentUserEmail = currentUserEmail)
+            }
+        }
+    }
+}
+
+@Composable
 private fun SessionDetailRow(icon: ImageVector, text: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Icon(imageVector = icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
         Text(text = text, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+
+@Composable
+private fun AttendeesList(attendees: List<CalendarAttendee>, currentUserEmail: String?) {
+    val statusLabel: (String) -> String = { status ->
+        when (status.lowercase()) {
+            "accepted" -> "Accepted"
+            "tentative" -> "Tentative"
+            "declined" -> "Declined"
+            else -> "Waiting"
+        }
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        attendees.forEach { attendee ->
+            val isYou = currentUserEmail?.equals(attendee.email, ignoreCase = true) == true
+            val primaryLabel = attendee.displayName?.takeIf { it.isNotBlank() }
+                ?: if (isYou) "You" else attendee.email
+            val secondary = attendee.displayName?.takeIf { it.isNotBlank() && !isYou }?.let { attendee.email }
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = primaryLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                secondary?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = statusLabel(attendee.responseStatus),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = when (attendee.responseStatus.lowercase()) {
+                        "accepted" -> MaterialTheme.colorScheme.primary
+                        "declined" -> MaterialTheme.colorScheme.error
+                        "tentative" -> MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+        }
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)

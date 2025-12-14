@@ -312,6 +312,7 @@ fun Step3Content(
         Spacer(Modifier.height(16.dp))
 
         // --- DAY DROPDOWN ---
+        @Suppress("DEPRECATION")
         ExposedDropdownMenuBox(
             expanded = dayMenuExpanded,
             onExpandedChange = { dayMenuExpanded = !dayMenuExpanded }
@@ -345,6 +346,7 @@ fun Step3Content(
         Spacer(Modifier.height(12.dp))
 
         // --- TIME DROPDOWN ---
+        @Suppress("DEPRECATION")
         ExposedDropdownMenuBox(
             expanded = timeMenuExpanded,
             onExpandedChange = { timeMenuExpanded = !timeMenuExpanded }

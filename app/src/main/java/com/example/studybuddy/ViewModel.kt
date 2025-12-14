@@ -29,6 +29,7 @@ import java.io.InputStream
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
+import java.net.URLEncoder
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -493,6 +494,12 @@ class CalendarViewModel : ViewModel() {
         private set
     var creationResult: CalendarCreationResult? by mutableStateOf(null)
         private set
+    var remoteEvents: Map<LocalDate, List<CalendarEvent>> by mutableStateOf(emptyMap())
+        private set
+    var isFetchingEvents: Boolean by mutableStateOf(false)
+        private set
+    var eventsError: String? by mutableStateOf(null)
+        private set
     private var pendingEvent: PendingEvent? = null
     private var lastRequestAuth: ((Intent?) -> Unit)? = null
 
@@ -510,6 +517,7 @@ class CalendarViewModel : ViewModel() {
     fun clearAccount() {
         signedInEmail = null
         signedInAccount = null
+        clearCalendarData()
     }
 
     fun showMonth(month: YearMonth) {
@@ -589,6 +597,53 @@ class CalendarViewModel : ViewModel() {
     fun clearCreationResult() {
         creationResult = null
     }
+
+    fun clearCalendarData() {
+        remoteEvents = emptyMap()
+        eventsError = null
+        isFetchingEvents = false
+        creationStatus = null
+        creationResult = null
+        pendingEvent = null
+        lastRequestAuth = null
+        sessions.clear()
+    }
+
+    fun fetchUpcomingEvents(
+        context: Context,
+        daysAhead: Long = 30
+    ) {
+        val account = signedInAccount ?: return
+        viewModelScope.launch {
+            isFetchingEvents = true
+            eventsError = null
+            val now = ZonedDateTime.now(ZoneId.systemDefault())
+            val timeMin = now.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            val timeMax = now.plusDays(daysAhead).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            try {
+                val credential = GoogleAccountCredential.usingOAuth2(
+                    context,
+                    listOf("https://www.googleapis.com/auth/calendar.events")
+                ).apply { selectedAccount = account }
+                val accessToken = withContext(Dispatchers.IO) { credential.token }
+                val result = fetchGoogleCalendarEvents(
+                    accessToken = accessToken,
+                    timeMin = timeMin,
+                    timeMax = timeMax
+                )
+                result.onSuccess { events ->
+                    val filtered = events.filter { isStudyBuddyEvent(it) }
+                    remoteEvents = filtered.groupBy { it.start.toLocalDate() }
+                }.onFailure { t ->
+                    eventsError = t.message
+                }
+            } catch (e: Exception) {
+                eventsError = e.message
+            } finally {
+                isFetchingEvents = false
+            }
+        }
+    }
 }
 
 enum class LocationType { IN_PERSON, VIRTUAL }
@@ -599,6 +654,24 @@ data class CalendarCreationResult(
     val success: Boolean,
     val message: String,
     val htmlLink: String? = null
+)
+
+data class CalendarEvent(
+    val id: String,
+    val title: String,
+    val description: String?,
+    val start: ZonedDateTime,
+    val end: ZonedDateTime?,
+    val location: String?,
+    val htmlLink: String?,
+    val sourceTag: String?,
+    val attendees: List<CalendarAttendee> = emptyList()
+)
+
+data class CalendarAttendee(
+    val email: String,
+    val responseStatus: String,
+    val displayName: String? = null
 )
 
 data class PendingEvent(
@@ -646,6 +719,7 @@ fun buildSessionDescription(session: StudySession): String {
 }
 
 private const val CALENDAR_VM_TAG = "CalendarViewModel"
+private const val STUDY_BUDDY_EVENT_SOURCE = "studybuddy"
 
 /*
  * Lightweight wrapper around Google Calendar's insert event endpoint. Handles token retrieval,
@@ -723,6 +797,9 @@ private suspend fun createGoogleCalendarEvent(
             location?.let { put("location", it) }
             put("start", startJson)
             put("end", endJson)
+            put("extendedProperties", JSONObject().apply {
+                put("private", JSONObject().apply { put("app", STUDY_BUDDY_EVENT_SOURCE) })
+            })
             attendeeEmail
                 ?.takeIf { it.isNotBlank() }
                 ?.let { email ->
@@ -765,4 +842,115 @@ private suspend fun createGoogleCalendarEvent(
     } catch (t: Throwable) {
         Result.failure(t)
     }
+}
+
+@SuppressLint("NewApi")
+private suspend fun fetchGoogleCalendarEvents(
+    accessToken: String,
+    timeMin: String,
+    timeMax: String,
+    maxResults: Int = 100
+): Result<List<CalendarEvent>> = withContext(Dispatchers.IO) {
+    try {
+        val base = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+        val query = listOf(
+            "singleEvents=true",
+            "orderBy=startTime",
+            "timeMin=${URLEncoder.encode(timeMin, "UTF-8")}",
+            "timeMax=${URLEncoder.encode(timeMax, "UTF-8")}",
+            "maxResults=$maxResults"
+        ).joinToString("&")
+        val url = URL("$base?$query")
+        val conn = (url.openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            setRequestProperty("Authorization", "Bearer $accessToken")
+            setRequestProperty("Accept", "application/json")
+            connectTimeout = 15000
+            readTimeout = 20000
+        }
+
+        val code = conn.responseCode
+        val stream: InputStream = if (code in 200..299) conn.inputStream else conn.errorStream
+        val response = stream.bufferedReader(Charsets.UTF_8).use(BufferedReader::readText)
+        Log.d(CALENDAR_VM_TAG, "Calendar list response ($code): $response")
+        if (code !in 200..299) {
+            return@withContext Result.failure(IllegalStateException("HTTP $code: $response"))
+        }
+
+        val json = JSONObject(response)
+        val items = json.optJSONArray("items") ?: JSONArray()
+        val events = mutableListOf<CalendarEvent>()
+        for (i in 0 until items.length()) {
+            val item = items.optJSONObject(i) ?: continue
+            val start = parseCalendarDate(item.optJSONObject("start"))
+            val end = parseCalendarDate(item.optJSONObject("end"))
+            if (start != null) {
+                val id = item.optString("id", "").ifBlank { "event_$i" }
+                val title = item.optString("summary", "Calendar Event")
+                val description = item.optString("description", "").takeIf { it.isNotBlank() }
+                val location = item.optString("location", "").takeIf { it.isNotBlank() }
+                val htmlLink = item.optString("htmlLink", "").takeIf { it.isNotBlank() }
+                val attendees = item.optJSONArray("attendees")?.let { arr ->
+                    buildList {
+                        for (j in 0 until arr.length()) {
+                            val attendee = arr.optJSONObject(j) ?: continue
+                            val email = attendee.optString("email", "").trim()
+                            if (email.isBlank()) continue
+                            val status = attendee.optString("responseStatus", "needsAction")
+                            val name = attendee.optString("displayName", "").takeIf { it.isNotBlank() }
+                            add(CalendarAttendee(email = email, responseStatus = status, displayName = name))
+                        }
+                    }
+                }.orEmpty()
+                val sourceTag = item.optJSONObject("extendedProperties")
+                    ?.optJSONObject("private")
+                    ?.let { priv ->
+                        priv.optString("app", "")
+                            .ifBlank { priv.optString("source", "") }
+                            .takeIf { it.isNotBlank() }
+                    }
+                events.add(
+                    CalendarEvent(
+                        id = id,
+                        title = title,
+                        description = description,
+                        start = start,
+                        end = end,
+                        location = location,
+                        htmlLink = htmlLink,
+                        sourceTag = sourceTag,
+                        attendees = attendees
+                    )
+                )
+            }
+        }
+        Result.success(events)
+    } catch (t: Throwable) {
+        Result.failure(t)
+    }
+}
+
+@SuppressLint("NewApi")
+private fun parseCalendarDate(obj: JSONObject?): ZonedDateTime? {
+    if (obj == null) return null
+    val dateTime = obj.optString("dateTime", "")
+    val dateOnly = obj.optString("date", "")
+    return try {
+        when {
+            dateTime.isNotBlank() -> ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+            dateOnly.isNotBlank() -> LocalDate.parse(dateOnly).atStartOfDay(ZoneId.systemDefault())
+            else -> null
+        }
+    } catch (t: Throwable) {
+        null
+    }
+}
+
+private fun isStudyBuddyEvent(event: CalendarEvent): Boolean {
+    if (event.sourceTag == STUDY_BUDDY_EVENT_SOURCE) return true
+    val desc = event.description?.lowercase().orEmpty()
+    val title = event.title.lowercase()
+    return desc.contains("study session with") ||
+            desc.contains("studybuddy") ||
+            title.contains("studybuddy")
 }

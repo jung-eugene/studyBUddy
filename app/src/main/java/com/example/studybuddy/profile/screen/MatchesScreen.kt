@@ -129,6 +129,7 @@ fun MatchesScreen(
                 if (email.isNotBlank()) {
                     val account = Account(email, "com.google")
                     calendarVM.onSignedIn(email, account)
+                    calendarVM.fetchUpcomingEvents(context)
                     val displayName = googleCredential?.displayName?.takeUnless { it.isNullOrBlank() } ?: email
                     Toast.makeText(context, "Signed in as $displayName", Toast.LENGTH_SHORT).show()
                     onSuccess()
@@ -155,6 +156,12 @@ fun MatchesScreen(
     LaunchedEffect(signedInAccount, scheduleTarget) {
         if (signedInAccount != null && scheduleTarget != null) {
             showScheduleDialog = true
+        }
+    }
+
+    LaunchedEffect(signedInAccount) {
+        if (signedInAccount != null) {
+            calendarVM.fetchUpcomingEvents(context)
         }
     }
 

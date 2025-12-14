@@ -583,6 +583,7 @@ fun AvailabilityEditor(
     val color = MaterialTheme.colorScheme
 
     Column {
+        @Suppress("DEPRECATION")
         ExposedDropdownMenuBox(
             expanded = dayMenuExpanded,
             onExpandedChange = { dayMenuExpanded = !dayMenuExpanded }
@@ -615,6 +616,7 @@ fun AvailabilityEditor(
 
         Spacer(Modifier.height(12.dp))
 
+        @Suppress("DEPRECATION")
         ExposedDropdownMenuBox(
             expanded = timeMenuExpanded,
             onExpandedChange = { timeMenuExpanded = !timeMenuExpanded }
@@ -724,6 +726,7 @@ fun YearDropdown(
     var expanded by remember { mutableStateOf(false) }
     val options = listOf("Freshman", "Sophomore", "Junior", "Senior", "Graduate", "Other")
 
+    @Suppress("DEPRECATION")
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = { expanded = !expanded }
