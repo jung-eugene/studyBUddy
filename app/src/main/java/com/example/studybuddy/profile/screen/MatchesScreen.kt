@@ -187,7 +187,7 @@ fun MatchesScreen(
                                 Text(
                                     "Current Matches",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
@@ -213,7 +213,7 @@ fun MatchesScreen(
                                 Text(
                                     "Past Matches",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
@@ -238,7 +238,7 @@ fun MatchesScreen(
         Dialog(onDismissRequest = { selectedUserForPopup = null }) {
             Surface(
                 shape = RoundedCornerShape(22.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -359,7 +359,7 @@ private fun ScheduleInviteDialog(
     var course by remember { mutableStateOf("") }
     var dialogMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var sessionTime by remember { mutableStateOf(LocalTime.now().plusMinutes(60)) }
+    var sessionTime by remember { mutableStateOf(LocalTime.now()) }
     var durationExpanded by remember { mutableStateOf(false) }
     var durationOption by remember { mutableStateOf(durationOptions[2]) }
     var locationType by remember { mutableStateOf(LocationType.IN_PERSON) }
@@ -369,10 +369,14 @@ private fun ScheduleInviteDialog(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties()) {
         Surface(
             shape = RoundedCornerShape(22.dp),
-            tonalElevation = 6.dp,
-            modifier = Modifier.fillMaxWidth()
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp,
+            shadowElevation = 12.dp,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.78f)
         ) {
-            Column(
+        Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(20.dp)

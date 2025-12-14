@@ -32,7 +32,7 @@ fun StudyBuddyTopBar(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.Black
+                color = MaterialTheme.colorScheme.onBackground
             )
         },
         modifier = modifier,
@@ -42,17 +42,17 @@ fun StudyBuddyTopBar(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.Black
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Color.White,
-            titleContentColor = Color.Black,
-            navigationIconContentColor = Color.Black,
-            actionIconContentColor = Color.Black
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
+            actionIconContentColor = MaterialTheme.colorScheme.onSurface
         ),
         scrollBehavior = scrollBehavior
     )
