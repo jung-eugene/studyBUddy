@@ -29,17 +29,15 @@ private val LightColorScheme = lightColorScheme(
 //Dark Theme Colors
 private val DarkColorScheme = darkColorScheme(
     primary = BUPrimaryDark,    // Darker red
-    secondary = BULight,        // Slightly muted red
+    secondary = BULight,
     background = BUDarkBackground,
     surface = BUDarkSurface,
     onPrimary = Color.White,
     onSecondary = Color.Black,
-    onBackground = BUDarkOnSurface,
+    onBackground = Color.White,
     onSurface = BUDarkOnSurface,
     outline = BUOutline
 )
-
-
 
 // Material 3 Theme Setup with Optional Dynamic Colors
 @Composable

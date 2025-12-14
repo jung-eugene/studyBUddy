@@ -187,7 +187,7 @@ fun MatchesScreen(
                                 Text(
                                     "Current Matches",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
@@ -213,7 +213,7 @@ fun MatchesScreen(
                                 Text(
                                     "Past Matches",
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = Color.Black
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                             }
@@ -238,7 +238,7 @@ fun MatchesScreen(
         Dialog(onDismissRequest = { selectedUserForPopup = null }) {
             Surface(
                 shape = RoundedCornerShape(22.dp),
-                color = Color.White,
+                color = MaterialTheme.colorScheme.surface,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -369,7 +369,7 @@ private fun ScheduleInviteDialog(
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties()) {
         Surface(
             shape = RoundedCornerShape(22.dp),
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp,
             shadowElevation = 12.dp,
             modifier = Modifier

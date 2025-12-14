@@ -349,7 +349,7 @@ fun SectionCard(
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = Color(0xFF717182),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(Modifier.width(8.dp))
@@ -357,7 +357,7 @@ fun SectionCard(
 
                 Text(
                     title,
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onBackground,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }

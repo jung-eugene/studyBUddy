@@ -59,7 +59,7 @@ fun MatchPopup(
             shape = RoundedCornerShape(20.dp),
             tonalElevation = 6.dp,
             shadowElevation = 12.dp,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.surface,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(12.dp)
@@ -186,7 +186,7 @@ fun HomeScreen(
             ) {
                 Surface(
                     shape = CircleShape,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.surface,
                     tonalElevation = 1.dp,
                     shadowElevation = 8.dp,
                     border = BorderStroke(2.dp, red),
@@ -251,14 +251,14 @@ private fun EmptyStateUI() {
     ) {
         Surface(
             shape = CircleShape,
-            color = Color(0xFFF0F0F3),
+            color = MaterialTheme.colorScheme.surfaceVariant,
             modifier = Modifier.size(96.dp)
         ) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Icon(
                     imageVector = Icons.Outlined.FavoriteBorder,
                     contentDescription = null,
-                    tint = Color(0xFF777777),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(48.dp)
                 )
             }
@@ -269,7 +269,7 @@ private fun EmptyStateUI() {
         Text(
             "No More Profiles",
             style = MaterialTheme.typography.titleMedium,
-            color = Color(0xFF333333)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(Modifier.height(8.dp))
@@ -277,7 +277,7 @@ private fun EmptyStateUI() {
         Text(
             "Check back later for new study buddies!",
             style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF777777)
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -369,7 +369,7 @@ fun UserCardCompact(
             .fillMaxWidth()
             .padding(horizontal = 4.dp, vertical = 4.dp),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation)
     ) {
 
@@ -406,13 +406,13 @@ fun UserCardCompact(
             ) {
                 Text(
                     text = user.name.ifBlank { "Unnamed Student" },
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Normal)
                 )
 
                 Text(
                     text = "${user.major} • ${user.year}",
-                    color = Color(0xFFFAFAFA),
+                    color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -426,11 +426,16 @@ fun UserCardCompact(
         ) {
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Book, contentDescription = null, tint = Color(0xFF6B6B6B))
+                Icon(
+                    Icons.Filled.Book,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Spacer(Modifier.width(8.dp))
                 Text(
                     "Current Courses",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             if (user.courses.isNotEmpty()) {
@@ -447,7 +452,10 @@ fun UserCardCompact(
                     }
                 }
             } else {
-                Text("No courses added.", color = Color.Gray)
+                Text(
+                    "No courses added.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
 
             if (user.studyPreferences.isNotEmpty()) {
@@ -456,10 +464,14 @@ fun UserCardCompact(
                     Icon(
                         Icons.Filled.CalendarToday,
                         contentDescription = null,
-                        tint = Color(0xFF6B6B6B)
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.width(8.dp))
-                    Text("Study Preferences", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Study Preferences",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -474,9 +486,17 @@ fun UserCardCompact(
             if (user.availabilitySlots.isNotEmpty()) {
                 Spacer(Modifier.height(6.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.AccessTime, contentDescription = null, tint = Color(0xFF6B6B6B))
+                    Icon(
+                        Icons.Filled.AccessTime,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text("Availability", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Availability",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),

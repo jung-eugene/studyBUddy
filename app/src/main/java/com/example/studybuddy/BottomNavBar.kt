@@ -45,7 +45,7 @@ fun BottomNavBar(navController: NavHostController) {
         )
 
         NavigationBar(
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.surface,
             tonalElevation = 0.dp, // Remove tint/shadows
         ) {
 
@@ -82,13 +82,13 @@ fun BottomNavBar(navController: NavHostController) {
                         Icon(
                             icon,
                             contentDescription = label,
-                            tint = if (selected) color.primary else Color.Gray
+                            tint = if (selected) color.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     label = {
                         Text(
                             label,
-                            color = if (selected) color.primary else Color.Gray
+                            color = if (selected) color.primary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
                     colors = NavigationBarItemDefaults.colors(
