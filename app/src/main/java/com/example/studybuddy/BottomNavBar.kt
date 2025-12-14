@@ -11,6 +11,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavGraph.Companion.findStartDestination
 
 @Composable
 fun BottomNavBar(navController: NavHostController) {
@@ -73,7 +74,9 @@ fun BottomNavBar(navController: NavHostController) {
                     selected = selected,
                     onClick = {
                         navController.navigate(screen.route) {
-                            popUpTo(Routes.Home.route) { saveState = true }
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
                             launchSingleTop = true
                             restoreState = true
                         }
