@@ -38,6 +38,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.CalendarViewModel
+import com.example.studybuddy.Routes
 import com.example.studybuddy.MatchEntry
 import com.example.studybuddy.DurationOption
 import com.example.studybuddy.LocationType
@@ -93,12 +94,14 @@ fun MatchesScreen(
     var selectedIsMutual by remember { mutableStateOf(false) }
     var scheduleTarget by remember { mutableStateOf<User?>(null) }
     var showScheduleDialog by remember { mutableStateOf(false) }
+    var showCreationDialog by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val credentialManager = remember(context) { CredentialManager.create(context) }
     val coroutineScope = rememberCoroutineScope()
     val signedInAccount = calendarVM.signedInAccount
     val signingIn = calendarVM.signingIn
+    val creationResult = calendarVM.creationResult
 
     val recoverAuthLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -153,6 +156,10 @@ fun MatchesScreen(
         if (signedInAccount != null && scheduleTarget != null) {
             showScheduleDialog = true
         }
+    }
+
+    LaunchedEffect(creationResult) {
+        showCreationDialog = creationResult?.success == true
     }
 
     Scaffold(
@@ -339,6 +346,40 @@ fun MatchesScreen(
                 showScheduleDialog = false
                 scheduleTarget = null
                 selectedUserForPopup = null
+            }
+        )
+    }
+
+    if (showCreationDialog && creationResult != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showCreationDialog = false
+                calendarVM.clearCreationResult()
+            },
+            title = { Text("Calendar event created") },
+            text = {
+                Text(
+                    creationResult.message.ifBlank {
+                        "Your study session was added to Google Calendar."
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showCreationDialog = false
+                    calendarVM.clearCreationResult()
+                    navController.navigate(Routes.Calendar.route)
+                }) {
+                    Text("View calendar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    showCreationDialog = false
+                    calendarVM.clearCreationResult()
+                }) {
+                    Text("Close")
+                }
             }
         )
     }

@@ -491,6 +491,8 @@ class CalendarViewModel : ViewModel() {
     val sessions: SnapshotStateList<StudySession> = mutableStateListOf()
     var creationStatus: String? by mutableStateOf(null)
         private set
+    var creationResult: CalendarCreationResult? by mutableStateOf(null)
+        private set
     private var pendingEvent: PendingEvent? = null
     private var lastRequestAuth: ((Intent?) -> Unit)? = null
 
@@ -539,6 +541,7 @@ class CalendarViewModel : ViewModel() {
         lastRequestAuth = requestAuth
         pendingEvent = event
         creationStatus = "Syncing session with Google Calendar..."
+        creationResult = null
         viewModelScope.launch {
             performCalendarCreate(
                 context = context,
@@ -550,9 +553,14 @@ class CalendarViewModel : ViewModel() {
                 location = event.location,
                 attendeeEmail = event.attendeeEmail,
                 notifyAttendees = event.attendeeEmail?.isNotBlank() == true,
-                onSuccess = {
+                onSuccess = { link ->
                     pendingEvent = null
                     creationStatus = "Session synced to Google Calendar"
+                    creationResult = CalendarCreationResult(
+                        success = true,
+                        message = "Calendar event created for your study session.",
+                        htmlLink = link.takeIf { it.startsWith("http") }
+                    )
                     Toast.makeText(context, "Session synced", Toast.LENGTH_SHORT).show()
                 },
                 onFailure = { msg ->
@@ -577,11 +585,21 @@ class CalendarViewModel : ViewModel() {
         val requestAuth = lastRequestAuth ?: { _: Intent? -> }
         syncSessionToCalendar(context, pending, requestAuth)
     }
+
+    fun clearCreationResult() {
+        creationResult = null
+    }
 }
 
 enum class LocationType { IN_PERSON, VIRTUAL }
 
 data class DurationOption(val label: String, val minutes: Int)
+
+data class CalendarCreationResult(
+    val success: Boolean,
+    val message: String,
+    val htmlLink: String? = null
+)
 
 data class PendingEvent(
     val account: Account,
