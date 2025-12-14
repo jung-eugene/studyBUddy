@@ -665,6 +665,8 @@ data class CalendarEvent(
     val location: String?,
     val htmlLink: String?,
     val sourceTag: String?,
+    val organizerEmail: String? = null,
+    val organizerDisplayName: String? = null,
     val attendees: List<CalendarAttendee> = emptyList()
 )
 
@@ -799,6 +801,7 @@ private suspend fun createGoogleCalendarEvent(
             put("end", endJson)
             put("extendedProperties", JSONObject().apply {
                 put("private", JSONObject().apply { put("app", STUDY_BUDDY_EVENT_SOURCE) })
+                put("shared", JSONObject().apply { put("app", STUDY_BUDDY_EVENT_SOURCE) })
             })
             attendeeEmail
                 ?.takeIf { it.isNotBlank() }
@@ -902,13 +905,18 @@ private suspend fun fetchGoogleCalendarEvents(
                         }
                     }
                 }.orEmpty()
-                val sourceTag = item.optJSONObject("extendedProperties")
-                    ?.optJSONObject("private")
-                    ?.let { priv ->
-                        priv.optString("app", "")
-                            .ifBlank { priv.optString("source", "") }
-                            .takeIf { it.isNotBlank() }
-                    }
+                val organizerObj = item.optJSONObject("organizer")
+                val organizerEmail = organizerObj?.optString("email", "").orEmpty().takeIf { it.isNotBlank() }
+                val organizerName = organizerObj?.optString("displayName", "").orEmpty().takeIf { it.isNotBlank() }
+                val sourceTag = item.optJSONObject("extendedProperties")?.let { props ->
+                    val sharedTag = props.optJSONObject("shared")?.let { shared ->
+                        shared.optString("app", "").ifBlank { shared.optString("source", "") }
+                    }.orEmpty()
+                    val privateTag = props.optJSONObject("private")?.let { priv ->
+                        priv.optString("app", "").ifBlank { priv.optString("source", "") }
+                    }.orEmpty()
+                    listOf(sharedTag, privateTag).firstOrNull { it.isNotBlank() }
+                }
                 events.add(
                     CalendarEvent(
                         id = id,
@@ -919,6 +927,8 @@ private suspend fun fetchGoogleCalendarEvents(
                         location = location,
                         htmlLink = htmlLink,
                         sourceTag = sourceTag,
+                        organizerEmail = organizerEmail,
+                        organizerDisplayName = organizerName,
                         attendees = attendees
                     )
                 )

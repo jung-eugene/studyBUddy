@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -672,6 +673,7 @@ private fun RemoteEventCard(event: CalendarEvent, currentUserEmail: String?) {
             append("  ").append(timeFormatter.format(end.toLocalTime()))
         }
     }
+    val host = event.organizerDisplayName?.takeIf { it.isNotBlank() } ?: event.organizerEmail
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -716,6 +718,12 @@ private fun RemoteEventCard(event: CalendarEvent, currentUserEmail: String?) {
                 icon = Icons.Default.LocationOn,
                 text = event.location ?: "No location"
             )
+            host?.let {
+                SessionDetailRow(
+                    icon = Icons.Default.Person,
+                    text = "Hosted by $it"
+                )
+            }
             if (event.attendees.isNotEmpty()) {
                 Text(
                     text = "Guests",
