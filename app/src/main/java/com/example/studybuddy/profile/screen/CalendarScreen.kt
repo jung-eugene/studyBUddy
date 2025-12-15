@@ -1,68 +1,30 @@
 package com.example.studybuddy.profile.screen
 
 import android.accounts.Account
-import android.app.TimePickerDialog
-import android.content.Context
-import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.Notes
-import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.automirrored.filled.*
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -71,35 +33,22 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.example.studybuddy.BottomNavBar
 import com.example.studybuddy.CalendarViewModel
-import com.example.studybuddy.DurationOption
-import com.example.studybuddy.LocationType
-import com.example.studybuddy.PendingEvent
-import com.example.studybuddy.StudySession
 import com.example.studybuddy.CalendarEvent
 import com.example.studybuddy.CalendarAttendee
-import com.example.studybuddy.buildSessionDescription
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CustomCredential
 import androidx.credentials.exceptions.GetCredentialException
-import com.example.studybuddy.displayText
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
 import java.time.DayOfWeek
 import java.time.LocalDate
-
-import java.time.LocalTime
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
@@ -121,15 +70,15 @@ private val daysOfWeek = listOf(
     DayOfWeek.SATURDAY
 )
 
-// options for the duration portion, map it to minutes to use in actual event creation
-private val durationOptions = listOf(
-    DurationOption("30 minutes", 30),
-    DurationOption("45 minutes", 45),
-    DurationOption("1 hour", 60),
-    DurationOption("90 minutes", 90),
-    DurationOption("2 hours", 120),
-    DurationOption("3 hours", 180)
-)
+//// options for the duration portion, map it to minutes to use in actual event creation
+//private val durationOptions = listOf(
+//    DurationOption("30 minutes", 30),
+//    DurationOption("45 minutes", 45),
+//    DurationOption("1 hour", 60),
+//    DurationOption("90 minutes", 90),
+//    DurationOption("2 hours", 120),
+//    DurationOption("3 hours", 180)
+//)
 
 /*
  * Screen composition that wires view-model state into Compose UI
@@ -288,7 +237,7 @@ private fun GoogleAccountStatusCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
                 text = "Google Calendar",
@@ -296,7 +245,10 @@ private fun GoogleAccountStatusCard(
                 fontWeight = FontWeight.SemiBold
             )
             if (email == null) {
-                Text("Connect your Google account to sync study sessions.")
+                Text("Connect your Google account to sync study sessions.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Button(
                     onClick = onSignIn,
                     enabled = !signingIn
@@ -309,7 +261,11 @@ private fun GoogleAccountStatusCard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Signed in as $email", modifier = Modifier.weight(1f))
+                    Text(
+                        "Signed in as $email",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
                     IconButton(
                         onClick = onRefresh,
                         enabled = !isFetchingEvents && !signingIn
@@ -337,45 +293,6 @@ private fun GoogleAccountStatusCard(
 }
 
 @Composable
-private fun SignInPromptDialog(
-    signingIn: Boolean,
-    onDismiss: () -> Unit,
-    onSignIn: () -> Unit
-) {
-    /*
-    * Modal dialog that shows the sign in prompt when the user tries to schedule a session without signing in a google account.
-    */
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(20.dp)) {
-            Column(
-                modifier = Modifier
-                    .padding(24.dp)
-                    .fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text( // title
-                    text = "Sign in required",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text("Please sign in with Google to schedule and sync study sessions.") //body
-                Row( //buttons for sign in or exit
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Not now")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(onClick = onSignIn, enabled = !signingIn) {
-                        Text(if (signingIn) "Opening..." else "Sign in")
-                    }
-                }
-            }
-        }
-    }
-}
-@Composable
 private fun CalendarCard(
     month: YearMonth,
     selectedDate: LocalDate,
@@ -391,7 +308,7 @@ private fun CalendarCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Study Sessions",
+                text = "Your Study Sessions",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold
             )
@@ -555,17 +472,10 @@ private fun SessionListSection(
     if (remoteEvents.isEmpty() && !isFetchingExternal) {
         Text(
             text = "No sessions scheduled for this day.",
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     } else {
-        if (remoteEvents.isNotEmpty() || isFetchingExternal) {
-            Text(
-                text = "Google Calendar",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-            )
-        }
         if (isFetchingExternal && remoteEvents.isEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 CircularProgressIndicator(
@@ -585,80 +495,6 @@ private fun SessionListSection(
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall
             )
-        }
-    }
-}
-
-@Composable
-private fun SessionCard(session: StudySession) {
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("EEE, MMM d") }
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("h:mm a") }
-    val locationLine = listOfNotNull(
-        session.locationType.displayText(),
-        session.location.takeIf { it.isNotBlank() }
-    ).joinToString(" • ")
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(MaterialTheme.colorScheme.surface)
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = session.course.take(3).uppercase(Locale.getDefault()),
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                Column {
-                    Text(
-                        text = session.course,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "with ${session.partner}",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            SessionDetailRow(
-                icon = Icons.Default.CalendarMonth,
-                text = dateFormatter.format(session.date)
-            )
-            SessionDetailRow(
-                icon = Icons.Default.AccessTime,
-                text = "${timeFormatter.format(session.time)} • ${session.durationLabel}"
-            )
-            SessionDetailRow(
-                icon = Icons.Default.LocationOn,
-                text = locationLine
-            )
-            if (session.notes.isNotBlank()) {
-                SessionDetailRow(
-                    icon = Icons.AutoMirrored.Filled.Notes,
-                    text = session.notes
-                )
-            }
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(imageVector = Icons.Default.Sync, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                Text(
-                    text = "Synced to Google Calendar",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
     }
 }
@@ -688,22 +524,26 @@ private fun RemoteEventCard(event: CalendarEvent, currentUserEmail: String?) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.CalendarMonth,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
                 Column {
                     Text(
                         text = event.title.ifBlank { "Calendar Event" },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
-                    Text(
-                        text = "Google Calendar",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Sync,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp))
+                        Text(
+                            text = "Synced to Google Calendar",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
             SessionDetailRow(
@@ -791,197 +631,197 @@ private fun AttendeesList(attendees: List<CalendarAttendee>, currentUserEmail: S
         }
     }
 }
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun ScheduleSessionDialog(
-    initialDate: LocalDate,
-    onDismiss: () -> Unit,
-    onSessionCreated: (StudySession) -> Unit
-) {
-    val context = LocalContext.current
-    val today = remember { LocalDate.now() }
-    var partner by remember { mutableStateOf("") }
-    var course by remember { mutableStateOf("") }
-    var dialogMonth by remember { mutableStateOf(YearMonth.from(initialDate)) }
-    var selectedDate by remember { mutableStateOf(if (initialDate.isBefore(today)) today else initialDate) }
-    var sessionTime by remember { mutableStateOf(LocalTime.of(19, 0)) }
-    var durationExpanded by remember { mutableStateOf(false) }
-    var durationOption by remember { mutableStateOf(durationOptions[2]) }
-    var locationType by remember { mutableStateOf(LocationType.IN_PERSON) }
-    var location by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
-
-    val timeFormatter = remember { DateTimeFormatter.ofPattern("h:mm a") }
-
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 6.dp) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp)
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "New Study Session",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close dialog")
-                    }
-                }
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = partner,
-                    onValueChange = { partner = it },
-                    label = { Text("Study Partner") },
-                    placeholder = { Text("Select a partner") }
-                )
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = course,
-                    onValueChange = { course = it },
-                    label = { Text("Course") },
-                    placeholder = { Text("Select a course") }
-                )
-
-                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(text = "Date", fontWeight = FontWeight.SemiBold)
-                        MonthCalendar(
-                            month = dialogMonth,
-                            selectedDate = selectedDate,
-                            onMonthChanged = { dialogMonth = it },
-                            onDateSelected = { selectedDate = it },
-                            minDate = today
-                        )
-                    }
-                }
-
-                /*
-                * Full-width Box + overlay clickable layer lets taps anywhere on the field
-                * trigger the native picker instead of focusing the read-only text field.
-                */
-                val timeTapSource = remember { MutableInteractionSource() }
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = timeFormatter.format(sessionTime),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Time") },
-                        trailingIcon = { Icon(imageVector = Icons.Default.AccessTime, contentDescription = null) }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = timeTapSource,
-                                indication = null
-                            ) {
-                                TimePickerDialog(
-                                    context,
-                                    { _, hour, minute -> sessionTime = LocalTime.of(hour, minute) },
-                                    sessionTime.hour,
-                                    sessionTime.minute,
-                                    false
-                                ).show()
-                            }
-                    )
-                }
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    val durationTapSource = remember { MutableInteractionSource() }
-                    OutlinedTextField(
-                        value = durationOption.label,
-                        onValueChange = {},
-                        readOnly = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Duration") },
-                        trailingIcon = { Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = null) }
-                    )
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clickable(
-                                interactionSource = durationTapSource,
-                                indication = null
-                            ) { durationExpanded = true }
-                    )
-                    DropdownMenu(
-                        expanded = durationExpanded,
-                        onDismissRequest = { durationExpanded = false }
-                    ) {
-                        durationOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = { Text(option.label) },
-                                onClick = {
-                                    durationOption = option
-                                    durationExpanded = false
-                                }
-                            )
-                        }
-                    }
-                }
-
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(text = "Location Type", fontWeight = FontWeight.SemiBold)
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        FilterChip(
-                            selected = locationType == LocationType.IN_PERSON,
-                            onClick = { locationType = LocationType.IN_PERSON },
-                            label = { Text("In Person") }
-                        )
-                        FilterChip(
-                            selected = locationType == LocationType.VIRTUAL,
-                            onClick = { locationType = LocationType.VIRTUAL },
-                            label = { Text("Virtual") }
-                        )
-                    }
-                }
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = location,
-                    onValueChange = { location = it },
-                    label = { Text("Location") },
-                    placeholder = { Text("e.g., Mugar Library, 3rd Floor") }
-                )
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = notes,
-                    onValueChange = { notes = it },
-                    label = { Text("Notes (Optional)") },
-                    placeholder = { Text("What will you study?") }
-                )
-
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = course.isNotBlank(),
-                    onClick = {
-                        onSessionCreated(
-                            StudySession(
-                                partner = partner.ifBlank { "Study Buddy" },
-                                course = course.ifBlank { "Study Session" },
-                                date = selectedDate,
-                                time = sessionTime,
-                                durationLabel = durationOption.label,
-                                durationMinutes = durationOption.minutes,
-                                locationType = locationType,
-                                location = location,
-                                notes = notes
-                            )
-                        )
-                    }
-                ) {
-                    Text("Create Session")
-                }
-            }
-        }
-    }
-}
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//private fun ScheduleSessionDialog(
+//    initialDate: LocalDate,
+//    onDismiss: () -> Unit,
+//    onSessionCreated: (StudySession) -> Unit
+//) {
+//    val context = LocalContext.current
+//    val today = remember { LocalDate.now() }
+//    var partner by remember { mutableStateOf("") }
+//    var course by remember { mutableStateOf("") }
+//    var dialogMonth by remember { mutableStateOf(YearMonth.from(initialDate)) }
+//    var selectedDate by remember { mutableStateOf(if (initialDate.isBefore(today)) today else initialDate) }
+//    var sessionTime by remember { mutableStateOf(LocalTime.of(19, 0)) }
+//    var durationExpanded by remember { mutableStateOf(false) }
+//    var durationOption by remember { mutableStateOf(durationOptions[2]) }
+//    var locationType by remember { mutableStateOf(LocationType.IN_PERSON) }
+//    var location by remember { mutableStateOf("") }
+//    var notes by remember { mutableStateOf("") }
+//
+//    val timeFormatter = remember { DateTimeFormatter.ofPattern("h:mm a") }
+//
+//    Dialog(onDismissRequest = onDismiss) {
+//        Surface(shape = RoundedCornerShape(28.dp), tonalElevation = 6.dp) {
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(24.dp)
+//                    .verticalScroll(rememberScrollState()),
+//                verticalArrangement = Arrangement.spacedBy(16.dp)
+//            ) {
+//                Row(verticalAlignment = Alignment.CenterVertically) {
+//                    Text(
+//                        text = "New Study Session",
+//                        style = MaterialTheme.typography.titleLarge,
+//                        fontWeight = FontWeight.Bold,
+//                        modifier = Modifier.weight(1f)
+//                    )
+//                    IconButton(onClick = onDismiss) {
+//                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close dialog")
+//                    }
+//                }
+//
+//                OutlinedTextField(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    value = partner,
+//                    onValueChange = { partner = it },
+//                    label = { Text("Study Partner") },
+//                    placeholder = { Text("Select a partner") }
+//                )
+//                OutlinedTextField(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    value = course,
+//                    onValueChange = { course = it },
+//                    label = { Text("Course") },
+//                    placeholder = { Text("Select a course") }
+//                )
+//
+//                Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+//                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+//                        Text(text = "Date", fontWeight = FontWeight.SemiBold)
+//                        MonthCalendar(
+//                            month = dialogMonth,
+//                            selectedDate = selectedDate,
+//                            onMonthChanged = { dialogMonth = it },
+//                            onDateSelected = { selectedDate = it },
+//                            minDate = today
+//                        )
+//                    }
+//                }
+//
+//                /*
+//                * Full-width Box + overlay clickable layer lets taps anywhere on the field
+//                * trigger the native picker instead of focusing the read-only text field.
+//                */
+//                val timeTapSource = remember { MutableInteractionSource() }
+//                Box(modifier = Modifier.fillMaxWidth()) {
+//                    OutlinedTextField(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        value = timeFormatter.format(sessionTime),
+//                        onValueChange = {},
+//                        readOnly = true,
+//                        label = { Text("Time") },
+//                        trailingIcon = { Icon(imageVector = Icons.Default.AccessTime, contentDescription = null) }
+//                    )
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .clickable(
+//                                interactionSource = timeTapSource,
+//                                indication = null
+//                            ) {
+//                                TimePickerDialog(
+//                                    context,
+//                                    { _, hour, minute -> sessionTime = LocalTime.of(hour, minute) },
+//                                    sessionTime.hour,
+//                                    sessionTime.minute,
+//                                    false
+//                                ).show()
+//                            }
+//                    )
+//                }
+//
+//                Box(modifier = Modifier.fillMaxWidth()) {
+//                    val durationTapSource = remember { MutableInteractionSource() }
+//                    OutlinedTextField(
+//                        value = durationOption.label,
+//                        onValueChange = {},
+//                        readOnly = true,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        label = { Text("Duration") },
+//                        trailingIcon = { Icon(imageVector = Icons.Default.KeyboardArrowDown, contentDescription = null) }
+//                    )
+//                    Box(
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .clickable(
+//                                interactionSource = durationTapSource,
+//                                indication = null
+//                            ) { durationExpanded = true }
+//                    )
+//                    DropdownMenu(
+//                        expanded = durationExpanded,
+//                        onDismissRequest = { durationExpanded = false }
+//                    ) {
+//                        durationOptions.forEach { option ->
+//                            DropdownMenuItem(
+//                                text = { Text(option.label) },
+//                                onClick = {
+//                                    durationOption = option
+//                                    durationExpanded = false
+//                                }
+//                            )
+//                        }
+//                    }
+//                }
+//
+//                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+//                    Text(text = "Location Type", fontWeight = FontWeight.SemiBold)
+//                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+//                        FilterChip(
+//                            selected = locationType == LocationType.IN_PERSON,
+//                            onClick = { locationType = LocationType.IN_PERSON },
+//                            label = { Text("In Person") }
+//                        )
+//                        FilterChip(
+//                            selected = locationType == LocationType.VIRTUAL,
+//                            onClick = { locationType = LocationType.VIRTUAL },
+//                            label = { Text("Virtual") }
+//                        )
+//                    }
+//                }
+//
+//                OutlinedTextField(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    value = location,
+//                    onValueChange = { location = it },
+//                    label = { Text("Location") },
+//                    placeholder = { Text("e.g., Mugar Library, 3rd Floor") }
+//                )
+//
+//                OutlinedTextField(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    value = notes,
+//                    onValueChange = { notes = it },
+//                    label = { Text("Notes (Optional)") },
+//                    placeholder = { Text("What will you study?") }
+//                )
+//
+//                Button(
+//                    modifier = Modifier.fillMaxWidth(),
+//                    enabled = course.isNotBlank(),
+//                    onClick = {
+//                        onSessionCreated(
+//                            StudySession(
+//                                partner = partner.ifBlank { "Study Buddy" },
+//                                course = course.ifBlank { "Study Session" },
+//                                date = selectedDate,
+//                                time = sessionTime,
+//                                durationLabel = durationOption.label,
+//                                durationMinutes = durationOption.minutes,
+//                                locationType = locationType,
+//                                location = location,
+//                                notes = notes
+//                            )
+//                        )
+//                    }
+//                ) {
+//                    Text("Create Session")
+//                }
+//            }
+//        }
+//    }
+//}
