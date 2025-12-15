@@ -36,7 +36,7 @@ studyBUddy addresses this by providing:
 ## 💫 Features
 
 ### 1. Home Screen
-<img width="280" alt="home" src="https://github.com/user-attachments/assets/8a626e8c-3d08-4d70-a046-1f8f8670022c" />
+<img width="240" alt="home" src="https://github.com/user-attachments/assets/8a626e8c-3d08-4d70-a046-1f8f8670022c" />
 
 * Users swipe through curated profiles of students with similar study goals
 * Swipe left to skip, right to like
@@ -47,9 +47,9 @@ studyBUddy addresses this by providing:
    * Availability
  
 ### 2. Matches Screen
-<img width="280" alt="matches" src="https://github.com/user-attachments/assets/9ae27de1-cd66-44d8-94dc-b458db3a7873" />
-<img width="280" alt="matches-card" src="https://github.com/user-attachments/assets/0bed20b2-b53a-4386-a898-10a1a04b60cf" />
-<img width="280" alt="matches-invite" src="https://github.com/user-attachments/assets/d9744dfc-6a9f-4107-aff8-b527574b1f41" />
+<img width="240" alt="matches" src="https://github.com/user-attachments/assets/9ae27de1-cd66-44d8-94dc-b458db3a7873" />
+<img width="240" alt="matches-card" src="https://github.com/user-attachments/assets/0bed20b2-b53a-4386-a898-10a1a04b60cf" />
+<img width="240" alt="matches-invite" src="https://github.com/user-attachments/assets/d9744dfc-6a9f-4107-aff8-b527574b1f41" />
 
 * View all current matches and past matches
 * Expand a match to view their full profile card
@@ -58,9 +58,9 @@ studyBUddy addresses this by providing:
 * Users can “unmatch” (archive) past matches
 
 ### 3. Calendar Screen
-<img width="280" alt="calender-signin" src="https://github.com/user-attachments/assets/bbe17181-21ee-4515-b0fc-a24ccdb95e87" />
-<img width="280" alt="calendar" src="https://github.com/user-attachments/assets/6305fa53-382e-465c-9a66-3db822e5b47a" />
-<img width="280" alt="calendar-event" src="https://github.com/user-attachments/assets/4beaa3a6-7871-4b2c-bd41-97a6ee657642" />
+<img width="240" alt="calender-signin" src="https://github.com/user-attachments/assets/bbe17181-21ee-4515-b0fc-a24ccdb95e87" />
+<img width="240" alt="calendar" src="https://github.com/user-attachments/assets/6305fa53-382e-465c-9a66-3db822e5b47a" />
+<img width="240" alt="calendar-event" src="https://github.com/user-attachments/assets/4beaa3a6-7871-4b2c-bd41-97a6ee657642" />
 
 * Users sign in with their Google account
 * Displays all study sessions that have been:
@@ -70,9 +70,9 @@ studyBUddy addresses this by providing:
 * Note: Event creation happens in the Matches screen, not here
 
 ### 4. Profile Screen
-<img width="280" alt="profile" src="https://github.com/user-attachments/assets/6f58b6c2-81a7-4fe0-90b9-75ee5af0d24a" />
-<img width="280" alt="profile-edit" src="https://github.com/user-attachments/assets/4f0de39f-d378-481f-a947-51174c91eb13" />
-<img width="280" alt="profile-darkmode" src="https://github.com/user-attachments/assets/7c625b01-8b50-4ddf-886a-a58eded851b3" />
+<img width="240" alt="profile" src="https://github.com/user-attachments/assets/6f58b6c2-81a7-4fe0-90b9-75ee5af0d24a" />
+<img width="240" alt="profile-edit" src="https://github.com/user-attachments/assets/4f0de39f-d378-481f-a947-51174c91eb13" />
+<img width="240" alt="profile-darkmode" src="https://github.com/user-attachments/assets/7c625b01-8b50-4ddf-886a-a58eded851b3" />
 
 * Displays user information (major, year, bio, courses, availability)
 * Users can edit profile details
@@ -94,6 +94,16 @@ studyBUddy addresses this by providing:
 | Dark mode support                        | `feature/dark-mode`             | Complete       |
 | Vertification email screen               | `feature/vertification-optional`| Complete       |
 | Filter algorithm for Home screen         | `feature/filtering`             | Complete       | 
+
+---
+## 🧩 App Architecture
+<img width="700" alt="architecture" src="https://github.com/user-attachments/assets/516b4381-a580-4a0a-b8a2-31d272447d6d" />
+
+* The app uses a layered MVVM architecture built with Jetpack Compose, StateFlow, Firebase, and the Google Calendar API.
+* The UI Layer contains all composable screens (Login, Setup, Home, Matches, Calendar, Profile) and sends user actions to ViewModels.
+* The ViewModel Layer holds screen state, handles business logic (auth, profile, matches, swipe behavior, calendar events), and exposes reactive StateFlows back to the UI.
+* The Data/Services Layer contains repositories and integrations — Firebase Auth for credentials, Firestore for user/match data, MatchRepository for pairing logic, and the Google Calendar API for scheduling study sessions.
+* State updates flow upward from data → ViewModels → UI, ensuring clean separation and consistent automatic recomposition.
 
 ---
 ## 🛠️ Run Instructions
@@ -185,15 +195,6 @@ Your Google account must be added as a test user in the project’s Google Cloud
 | **Jerry Teixeira** | Data & Authentication | Firebase setup, Google Calendar API, authentication logic |
 | **Eugene Jung** | UI/UX & Frontend | Compose layouts, swipe interface, Material 3 theming, API integration |
 | **Aaron Huang** | Backend & Integration | Database setup, API connections, filtering, app logic, testing |
-
----
-
-## 🧩 Tech Stack
-- **Language:** Kotlin  
-- **Framework:** Jetpack Compose  
-- **Backend:** Firebase Firestore 
-- **APIs:** Firebase Auth, Google Calendar 
-- **UI:** Material 3 with dark/light mode support
 
 ---
 
