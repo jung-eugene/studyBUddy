@@ -36,7 +36,7 @@ studyBUddy addresses this by providing:
 ## 💫 Features
 
 ### 1. Home Screen
-<img width="240" alt="home" src="https://github.com/user-attachments/assets/8a626e8c-3d08-4d70-a046-1f8f8670022c" />
+<img width="240" alt="home" src="https://github.com/user-attachments/assets/545117c5-5aa6-4705-9c62-b7f6672dbc07" />
 
 * Users swipe through curated profiles of students with similar study goals
 * Swipe left to skip, right to like
@@ -45,6 +45,7 @@ studyBUddy addresses this by providing:
    * Current courses
    * Study preferences
    * Availability
+* Shake your device or tap the refresh button to update the list of users.
  
 ### 2. Matches Screen
 <img width="240" alt="matches" src="https://github.com/user-attachments/assets/9ae27de1-cd66-44d8-94dc-b458db3a7873" />
@@ -171,7 +172,8 @@ Your Google account must be added as a test user in the project’s Google Cloud
 - **Firestore**: User profiles, matches, availability, preferences
 
 **Onboard Sensors**
-- **Camera:** Uploading profile photos  
+- **Camera:** Uploading profile photos
+- **Shake:** Shake to refresh list of users
 
 ---
 
