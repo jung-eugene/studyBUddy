@@ -247,3 +247,6 @@ Throughout development, we used Large Language Models (LLMs) such as ChatGPT and
 * Improving documentation and README clarity
 
 All final implementations were reviewed, tested, and refined manually by the development team to ensure correctness, security, and maintainability.
+
+---
+_Made with ❤️ by CS501 Team Dev · Fall 2025_
