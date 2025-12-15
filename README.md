@@ -1,51 +1,105 @@
 # 📚 studyBUddy: Find Your Study Match
 
-studyBUddy is a mobile app built with Kotlin and Jetpack Compose that helps **Boston University students** find compatible study partners based on their **courses, availability, and study habits**.
+**studyBUddy** is an Android app built with **Kotlin** and **Jetpack Compose** that helps **Boston University students** find compatible study partners using their **courses, availability, and study preferences**.
 
-Instead of searching through Discord servers or Reddit posts, students can **swipe** through curated profiles of peers who share similar study goals. When two students mutually match, the app securely **reveals their BU email or phone number**, allowing them to connect and coordinate study sessions.
+Instead of browsing Discord or Reddit, students can swipe through curated profiles of peers with similar academic goals. When two students mutually match, studyBUddy securely **reveals their BU email**, enabling them to coordinate study sessions directly.
 
 ---
 
-## 🎯 App Concept and Primary Use Case
-The primary goal of studyBUddy is to connect students in **large or lecture-heavy courses** (such as computer science, data science, or economics) who want to:
+## 🎯 App Concept
+studyBUddy aims to connect students in **large or lecture-heavy classes** such as CS, DS, and Economics. Students can use the app to:
 - Form small study groups
-- Review together before exams
+- Prepare for exams together
 - Stay accountable through regular check-ins
 
-By combining familiar social mechanics (swiping) with an academic focus, studyBUddy turns collaboration into a simple, fun, and secure experience.
+By combining familiar swipe mechanics with academic matching, studyBUddy makes collaboration simple, engaging, and secure.
 
 ---
 
-## 👥 Target Users and Problem Being Solved
+## 👥 Target Users & Problem
 **Target Users:**  
-Current BU undergraduate students who want to study collaboratively.
+BU undergraduate/graduate students seeking collaborative study partners
 
 **Problem:**  
-Studying alone is hard, and BU’s large campus makes it challenging to find reliable study partners. Students need a quick, safe way to connect with others who share similar study goals, schedules, and classes.
+BU is a large campus, and students often struggle to find reliable peers who share:
+- The same courses
+- Compatible study habits
+- Overlapping schedules
 
-studyBUddy helps users:
-- Build academic accountability
-- Share resources and motivation
-- Collaborate effectively across courses
+studyBUddy addresses this by providing:
+- Fast academic matching
+- Built-in accountability
+- A safe, BU-verified community
+- Tools to schedule and plan study sessions
 
 ---
-## ✅ Current Features
+## 💫 Features
 
-studyBUddy is actively developed across multiple branches, each implementing key features. Below is a summary of what's currently available and where to find it:
+### 1. Home Screen
+<img width="280" alt="home" src="https://github.com/user-attachments/assets/8a626e8c-3d08-4d70-a046-1f8f8670022c" />
 
-| **Feature**                              | **Branch**                  | **Status**     |
-|------------------------------------------|-----------------------------|----------------|
-| Google Calendar Event Creation           | `feature/oauth-and-event`   | Functional     |
-| Core UI layout + Navigation setup        | `feature/onboarding-profile`| Functional     |
-| Home Screen with swipe deck animation    | `feature/home-screen`       | Functional     |
-| Profile picture upload (camera/gallery)  | `feature/camera-sensor`     | Functional     |
-| Core backend (NavGraph/ViewModel)        | `feature/onboarding-v2`     | Functional     |
+* Users swipe through curated profiles of students with similar study goals
+* Swipe left to skip, right to like
+* Each profile card displays:
+   * Name, major, year
+   * Current courses
+   * Study preferences
+   * Availability
+ 
+### 2. Matches Screen
+<img width="280" alt="matches" src="https://github.com/user-attachments/assets/9ae27de1-cd66-44d8-94dc-b458db3a7873" />
+<img width="280" alt="matches-card" src="https://github.com/user-attachments/assets/0bed20b2-b53a-4386-a898-10a1a04b60cf" />
+<img width="280" alt="matches-invite" src="https://github.com/user-attachments/assets/d9744dfc-6a9f-4107-aff8-b527574b1f41" />
+
+* View all current matches and past matches
+* Expand a match to view their full profile card
+* Schedule a Google Calendar event
+* Email is revealed only after a mutual match
+* Users can “unmatch” (archive) past matches
+
+### 3. Calendar Screen
+<img width="280" alt="calender-signin" src="https://github.com/user-attachments/assets/bbe17181-21ee-4515-b0fc-a24ccdb95e87" />
+<img width="280" alt="calendar" src="https://github.com/user-attachments/assets/6305fa53-382e-465c-9a66-3db822e5b47a" />
+<img width="280" alt="calendar-event" src="https://github.com/user-attachments/assets/4beaa3a6-7871-4b2c-bd41-97a6ee657642" />
+
+* Users sign in with their Google account
+* Displays all study sessions that have been:
+   * sent to them
+   * accepted
+   * added to Google Calendar
+* Note: Event creation happens in the Matches screen, not here
+
+### 4. Profile Screen
+<img width="280" alt="profile" src="https://github.com/user-attachments/assets/6f58b6c2-81a7-4fe0-90b9-75ee5af0d24a" />
+<img width="280" alt="profile-edit" src="https://github.com/user-attachments/assets/4f0de39f-d378-481f-a947-51174c91eb13" />
+<img width="280" alt="profile-darkmode" src="https://github.com/user-attachments/assets/7c625b01-8b50-4ddf-886a-a58eded851b3" />
+
+* Displays user information (major, year, bio, courses, availability)
+* Users can edit profile details
+* Upload or change profile photo
+* Toggle light/dark mode
+* Track streaks
+* Log out
+
+---
+## 🗂️ Branch Overview
+
+| **Feature**                              | **Branch**                      | **Status**     |
+|------------------------------------------|---------------------------------|----------------|
+| Google Calendar event creation           | `feature/oauth-and-event`       | Complete       |
+| Core UI layout + navigation              | `feature/onboarding-profile`    | Complete       |
+| Home screen with swipe deck animation    | `feature/home-screen`           | Complete       |
+| Profile picture upload                   | `feature/camera-sensor`         | Complete       |
+| Core backend (NavGraph/ViewModel)        | `feature/onboarding-v2`         | Complete       |
+| Dark mode support                        | `feature/dark-mode`             | Complete       |
+| Vertification email screen               | `feature/vertification-optional`| Complete       |
+| Filter algorithm for Home screen         | `feature/filtering`             | Complete       | 
 
 ---
 ## 🛠️ Run Instructions
 
 **Prerequisites:**
-- Your email must be added as a test user in the Google Cloud Platform (GCP) project for studyBUddy to access OAuth and calendar event creation.
+Your Google account must be added as a test user in the project’s Google Cloud Platform (GCP) console to allow OAuth and Calendar integration.
 
 **Steps:**
 
@@ -60,18 +114,17 @@ studyBUddy is actively developed across multiple branches, each implementing key
    git fetch --all
    ```
 
-3. **List Available Branches**
+3. **List Remote Branches**
    ```bash
    git branch -r
    ```
 
-4. **Checkout a Specific Feature Branch**
-   Replace `<branch-name>` with the one you want to work on:
+4. **Checkout a Feature Branch**
    ```bash
    git checkout <branch-name>
    ```
 
-5. **Open in Android Studio**
+5. **Open the project in Android Studio**
    - Make sure you have the latest version of Android Studio installed.
    - Open the project folder and let Gradle sync.
 
@@ -81,18 +134,18 @@ studyBUddy is actively developed across multiple branches, each implementing key
 
 ---
 
-## ⚙️ Planned Features
+## ⚙️ Feature Roadmap
 
-### **MVP**
+### **MVP Features**
 - **Authentication:** Login restricted to verified BU emails  
 - **Profile Management:** Create and edit a study profile (major, year, courses, availability)  
 - **Swipe Matching:** Swipe left/right to skip or like potential study partners  
 - **Matched List:** View and contact matched users  
-- **Match Reveal:** Once two users match, BU email or phone number is revealed
+- **Match Reveal:** Once two users match, BU email is revealed
 - **Google Calendar:** Schedule and plan study sessions directly through the app
 - **UI/UX Design:** Built with Material 3 theming and accessibility support
 
-### **Stretch Goals**
+### **Stretch Features**
 - **Dark Mode:** Optional dark theme for improved user comfort
 - **In-App Chat System:** Direct messaging between matched users
 - **Streak Tracking System:** Encourage regular study communication
@@ -100,27 +153,28 @@ studyBUddy is actively developed across multiple branches, each implementing key
 - **Google Maps API:** Suggest nearby study locations (e.g., Mugar Library, Questrom Cafe)  
 
 ---
-## 🌐 External APIs and Onboard Sensors
+## 🌐 APIs & Sensors
 
 **External APIs**
-- **Google Calendar API:** For planning and scheduling study sessions  
-- **Firebase Authentication:** For secure user login and account management  
+- **Google Calendar API:** Create study session events 
+- **Firebase Authentication:** Secure BU-email login
+- **Firestore**: User profiles, matches, availability, preferences
 
 **Onboard Sensors**
-- **Camera:** For uploading and updating profile photos  
+- **Camera:** Uploading profile photos  
 
 ---
 
-## 🧭 Rough Navigation Map
+## 🧭 Navigation Flow
 
 | Screen | Function |
 |--------|-----------|
-| **Login / Signup** | BU email verification |
-| **Profile Setup** | Input major, year, courses, and availability |
-| **Home** | Swipe through study partner cards |
-| **Matches** | View and contact matched users |
-| **Profile** | Edit personal info, toggle light/dark mode, logout |
+| **Login / Signup** | BU email verification + account creation|
+| **Profile Setup** | Add major, year, courses, and availability |
+| **Home** | Swipe through recommended study partners |
+| **Matches** | View matched users + contact info |
 | **Calendar** | Schedule and plan study sessions with partners |
+| **Profile** | Edit personal info, toggle light/dark mode, logout |
 
 ---
 
@@ -130,16 +184,16 @@ studyBUddy is actively developed across multiple branches, each implementing key
 |-----------|-----------|----------------------|
 | **Jerry Teixeira** | Data & Authentication | Firebase setup, Google Calendar API, authentication logic |
 | **Eugene Jung** | UI/UX & Frontend | Compose layouts, swipe interface, Material 3 theming, API integration |
-| **Aaron Huang** | Backend & Integration | Database setup, API connections, app logic, testing |
+| **Aaron Huang** | Backend & Integration | Database setup, API connections, filtering, app logic, testing |
 
 ---
 
 ## 🧩 Tech Stack
 - **Language:** Kotlin  
 - **Framework:** Jetpack Compose  
-- **Backend:** Firebase Firestore  
+- **Backend:** Firebase Firestore 
 - **APIs:** Firebase Auth, Google Calendar 
-- **UI:** Material 3 with dark/light mode support  
+- **UI:** Material 3 with dark/light mode support
 
 ---
 
