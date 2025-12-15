@@ -54,6 +54,7 @@ fun VerifyEmailScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
+    var initialEmailSent by remember { mutableStateOf(false) }
     val user = FirebaseAuth.getInstance().currentUser
     val email = user?.email.orEmpty()
 
@@ -61,6 +62,16 @@ fun VerifyEmailScreen(
         // If user somehow already verified, route forward.
         if (user?.isEmailVerified == true) {
             navigatePostVerify(navController, userVM)
+        }
+    }
+
+    LaunchedEffect(user?.uid) {
+        // Auto-send verification when the screen opens for a newly signed-up user.
+        if (!initialEmailSent && user != null && !user.isEmailVerified) {
+            initialEmailSent = true
+            authVM.sendVerificationEmail { _, msg ->
+                scope.launch { snackbarHostState.showSnackbar(msg) }
+            }
         }
     }
 

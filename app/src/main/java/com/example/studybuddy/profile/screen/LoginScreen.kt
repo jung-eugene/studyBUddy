@@ -1,6 +1,5 @@
 package com.example.studybuddy.profile.screen
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -238,14 +237,12 @@ fun LoginScreen(
                             authVM.signup(normalizedEmail, password) { success ->
                                 scope.launch {
                                     if (success) {
-                                        authVM.sendVerificationEmail { sent, msg ->
-                                            scope.launch {
-                                                snackbarHostState.showSnackbar(msg)
-                                                if (!sent) return@launch
-                                                navController.navigate(Routes.VerifyEmail.route) {
-                                                    popUpTo(Routes.Login.route) { inclusive = true }
-                                                }
-                                            }
+                                        // Kick off email verification process.
+                                        authVM.sendVerificationEmail { _, msg ->
+                                            scope.launch { snackbarHostState.showSnackbar(msg) }
+                                        }
+                                        navController.navigate(Routes.VerifyEmail.route) {
+                                            popUpTo(Routes.Login.route) { inclusive = true }
                                         }
                                     } else {
                                         snackbarHostState.showSnackbar("Signup failed. Use your BU email (@bu.edu).")
