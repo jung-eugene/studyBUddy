@@ -236,19 +236,22 @@ Your Google account must be added as a test user in the project’s Google Cloud
 
 ## 🤖 LLM Usage Disclosure
 
-Throughout development, we used Large Language Models (LLMs) such as ChatGPT and Gemini to support implementation and debugging, but not to auto-generate full features.
+Our team used ChatGPT and Google Gemini as support tools during development. They were most helpful for debugging Jetpack Compose and Firebase issues—such as unresolved references, missing imports, dependency mismatches, and interpreting unclear Firebase errors. AI also provided clarification on APIs, suggested state-management patterns, and generated small snippets that reduced boilerplate.
 
-**LLM assistance included:**
+### How AI Helped
 
-* Troubleshooting Android Studio / Gradle build errors
-* Debugging Jetpack Compose UI layout issues
-* Suggesting improvements for ViewModel + NavGraph architecture
-* Helping rewrite or optimize Kotlin snippets we already wrote
-* Providing explanations for Firebase, Google Calendar API, and OAuth behavior
-* Reviewing code for edge cases and error-handling gaps
-* Improving documentation and README clarity
+* Faster debugging and clearer explanations of Compose/Firebase behavior
+* Assistance outlining feature logic (e.g., matching flow, upload handling)
+* Help thinking through UI state transitions and potential edge cases
+* Examples of coroutines, state holders, and Compose patterns
 
-All final implementations were reviewed, tested, and refined manually by the development team to ensure correctness, security, and maintainability.
+### Limitations
+
+AI output was not always correct. Some generated code did not compile, relied on outdated APIs, or conflicted with our MVVM + Repository architecture (e.g., placing business logic in Composables). Because of this, all AI suggestions were treated as drafts.
+
+### Ensuring Quality & Security
+
+We manually reviewed, corrected, or rewrote all AI-assisted code. We frequently compiled and tested changes, validated Firebase security rules, and refactored logic into ViewModels and repositories to maintain architectural consistency. Edge cases—such as failed uploads, missing data, and network issues—were tested to ensure predictable, safe behavior. In summary, LLMs accelerated debugging and reduced routine overhead, but all final code, architecture decisions, and testing were performed and verified by the development team.
 
 ---
 _Made with ❤️ by CS501 Team Dev · Fall 2025_
