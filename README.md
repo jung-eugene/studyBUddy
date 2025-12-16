@@ -4,6 +4,8 @@
 
 Instead of browsing Discord or Reddit, students can swipe through curated profiles of peers with similar academic goals. When two students mutually match, studyBUddy securely **reveals their BU email**, enabling them to coordinate study sessions directly.
 
+**[Link to Final Report](https://docs.google.com/document/d/1jibcvsSRYDD0WhElKPs6c_-oKjPw_h1Kz2SkKKP8RWg/edit?usp=sharing)**
+
 ---
 
 ## 🎯 App Concept
