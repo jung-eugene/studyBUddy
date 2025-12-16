@@ -1,5 +1,10 @@
 package com.example.studybuddy.profile.screen
 
+import android.content.Context
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -32,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.*
@@ -43,10 +49,13 @@ import com.example.studybuddy.HomeViewModel
 import com.example.studybuddy.User
 import com.example.studybuddy.UserViewModel
 import com.example.studybuddy.AvailabilitySlot
-import kotlinx.coroutines.launch
-import kotlin.math.roundToInt
 import com.example.studybuddy.ui.StudyBuddyTopBar
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.launch
+import kotlin.math.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -124,6 +133,17 @@ fun HomeScreen(
 ) {
     val userState by userVM.uiState.collectAsState()
     val homeState by homeVM.uiState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    var lastShakeRefresh by remember { mutableLongStateOf(0L) }
+    val refreshMatches: () -> Unit = refresh@{
+        val now = System.currentTimeMillis()
+        if (now - lastShakeRefresh < 1200 || homeState.isLoading) return@refresh
+        lastShakeRefresh = now
+        coroutineScope.launch { snackbarHostState.showSnackbar("Refreshing matches...") }
+        homeVM.setCandidates(userState.allUsers) // reset deck immediately with current data
+        userVM.getAllUsers()
+    }
 
     var showMatchPopup by remember { mutableStateOf(false) }
     var matchedUser by remember { mutableStateOf<User?>(null) }
@@ -139,9 +159,12 @@ fun HomeScreen(
     val red = Color(0xFFD32F2F)
     val candidate = homeState.candidates.getOrNull(homeState.currentIndex)
 
+    ShakeToRefreshListener { refreshMatches() }
+
     Scaffold(
         topBar = { StudyBuddyTopBar(title = "studyBUddy") },
-        bottomBar = { BottomNavBar(navController) }
+        bottomBar = { BottomNavBar(navController) },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { pad ->
 
         Column(
@@ -158,7 +181,10 @@ fun HomeScreen(
             }
 
             if (candidate == null) {
-                EmptyStateUI()
+                EmptyStateUI(
+                    isLoading = homeState.isLoading,
+                    onRefresh = { refreshMatches() }
+                )
                 return@Column
             }
 
@@ -229,6 +255,20 @@ fun HomeScreen(
                     }
                 }
             }
+
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = "Shake your phone to refresh matches.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(Modifier.height(6.dp))
+            OutlinedButton(onClick = { refreshMatches() }) {
+                Icon(Icons.Outlined.Refresh, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+                Text("Refresh")
+            }
         }
     }
 
@@ -241,7 +281,10 @@ fun HomeScreen(
 }
 
 @Composable
-private fun EmptyStateUI() {
+private fun EmptyStateUI(
+    isLoading: Boolean,
+    onRefresh: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -279,6 +322,25 @@ private fun EmptyStateUI() {
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onBackground
         )
+
+        Spacer(Modifier.height(16.dp))
+        OutlinedButton(
+            onClick = onRefresh,
+            enabled = !isLoading
+        ) {
+            if (isLoading) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier
+                        .size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+            } else {
+                Icon(Icons.Outlined.Refresh, contentDescription = null)
+                Spacer(Modifier.width(6.dp))
+            }
+            Text(if (isLoading) "Refreshing..." else "Refresh matches")
+        }
     }
 }
 
@@ -354,6 +416,71 @@ private fun SwipeableUserCard(
     }
 }
 
+/**
+ * ShakeToRefreshListener
+ *
+ * This implementation was developed with assistance from an AI/LLM
+ * to refine the sensor logic, g-force calculation, and lifecycle handling.
+ * All logic was reviewed, tested, and integrated by the development team.
+ */
+@Composable
+private fun ShakeToRefreshListener(
+    shakeThreshold: Float = 2.7f,
+    debounceMs: Long = 1200L,
+    onShake: () -> Unit
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val sensorManager = remember {
+        context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+    }
+    val lastShake = remember { mutableLongStateOf(0L) }
+
+    DisposableEffect(sensorManager, lifecycleOwner) {
+        val manager = sensorManager ?: return@DisposableEffect onDispose { }
+        val accelerometer = manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            ?: return@DisposableEffect onDispose { }
+
+        val listener = object : SensorEventListener {
+            override fun onSensorChanged(event: SensorEvent) {
+                val gX = event.values[0] / SensorManager.GRAVITY_EARTH
+                val gY = event.values[1] / SensorManager.GRAVITY_EARTH
+                val gZ = event.values[2] / SensorManager.GRAVITY_EARTH
+                val gForce = sqrt(gX * gX + gY * gY + gZ * gZ)
+                val now = System.currentTimeMillis()
+
+
+                if (gForce > shakeThreshold && now - lastShake.longValue > debounceMs) {
+                    lastShake.longValue = now
+                    onShake()
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+        }
+
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> manager.registerListener(
+                    listener,
+                    accelerometer,
+                    SensorManager.SENSOR_DELAY_UI
+                )
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP -> manager.unregisterListener(listener)
+                else -> {}
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+        manager.registerListener(listener, accelerometer, SensorManager.SENSOR_DELAY_UI)
+
+        onDispose {
+            manager.unregisterListener(listener)
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+}
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UserCardCompact(
@@ -373,7 +500,7 @@ fun UserCardCompact(
         elevation = CardDefaults.cardElevation(defaultElevation = elevation)
     ) {
 
-    Column(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(red)
